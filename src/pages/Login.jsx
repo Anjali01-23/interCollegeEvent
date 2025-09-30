@@ -1,35 +1,56 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MdEmail, MdLock } from "react-icons/md";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Email:", email, "Password:", password);
+    setError("");
+
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+
+    // Find user with matching email and password
+    const user = users.find(
+      (u) => u.email === email && u.password === password
+    );
+
+    if (!user) {
+      setError("User not found or wrong credentials. Please signup first.");
+      return;
+    }
+
+    // Redirect based on role
+    if (user.role === "Super Admin" || user.role === "College Admin") {
+      navigate("/admin");
+    } else {
+      navigate("/dashboard");
+    }
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-slate-50 to-slate-100">
       <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
-        {/* Icon */}
         <div className="flex justify-center mb-4">
           <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl">
             📧
           </div>
         </div>
 
-        {/* Heading */}
         <h2 className="text-2xl font-semibold text-center mb-2">Welcome Back</h2>
-        <p className="text-gray-500 text-center mb-6">
+        <p className="text-gray-500 text-center mb-4">
           Sign in to your CampusEventHub account
         </p>
 
-        {/* Form */}
+        {error && (
+          <p className="text-red-500 text-center mb-4">{error}</p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
           <div className="relative">
             <MdEmail className="absolute left-3 top-3 text-gray-400 text-xl" />
             <input
@@ -42,7 +63,6 @@ export default function Login() {
             />
           </div>
 
-          {/* Password */}
           <div className="relative">
             <MdLock className="absolute left-3 top-3 text-gray-400 text-xl" />
             <input
@@ -55,7 +75,6 @@ export default function Login() {
             />
           </div>
 
-          {/* Forgot password */}
           <div className="flex justify-end">
             <Link
               to="/forgot-password"
@@ -65,7 +84,6 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Button */}
           <button
             type="submit"
             className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-md hover:opacity-90 transition"
@@ -74,7 +92,6 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Footer */}
         <p className="mt-6 text-center text-sm text-gray-600">
           Don’t have an account?{" "}
           <Link

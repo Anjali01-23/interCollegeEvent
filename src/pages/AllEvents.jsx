@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Search, Calendar, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "./Navbar";
 
 export default function AllEvents() {
   const [search, setSearch] = useState("");
@@ -68,21 +69,7 @@ export default function AllEvents() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ===== Header ===== */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="text-purple-600 font-bold text-xl">CampusEventHub</span>
-          <nav className="hidden md:flex gap-6 text-gray-600 font-medium">
-            <a href="#" className="text-purple-600">Events</a>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="hover:text-purple-600"
-            >
-              Dashboard
-            </button>
-          </nav>
-        </div>
-      </header>
+      <Navbar/>
 
       {/* ===== Main ===== */}
       <main className="max-w-7xl mx-auto px-6 py-8">

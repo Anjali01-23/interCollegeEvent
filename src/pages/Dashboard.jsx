@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState} from "react";
 import {
   Calendar,
   BarChart2,
@@ -7,7 +7,8 @@ import {
   Plus,
   UserCircle,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate , Link } from "react-router-dom";
+import Navbar from "./Navbar";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -17,44 +18,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navbar */}
-      <nav className="flex justify-between items-center bg-white shadow px-8 py-4">
-        {/* Left side */}
-        <div className="flex items-center gap-10">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <Calendar className="text-purple-600" size={28} />
-            <span className="font-bold text-xl text-gray-800">
-              CampusEventHub
-            </span>
-          </div>
-
-          {/* Links */}
-          <div className="flex gap-6 text-gray-600 font-medium">
-            <button
-              onClick={() => navigate("/events")}
-              className="hover:text-purple-600"
-            >
-              All Events
-            </button>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="text-purple-600 border-b-2 border-purple-600"
-            >
-              Dashboard
-            </button>
-          </div>
-        </div>
-
-        {/* Right side */}
-        <div className="flex items-center gap-3">
-          <UserCircle size={32} className="text-gray-600" />
-          <div>
-            <p className="text-sm font-semibold">Sarah Wilson</p>
-            <p className="text-xs text-gray-500">College Admin</p>
-          </div>
-        </div>
-      </nav>
+      <Navbar/>
 
       {/* Header */}
       <header className="px-8 py-6">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MdPerson, MdEmail, MdSchool, MdLock } from "react-icons/md";
 
 export default function Signup() {
@@ -12,13 +12,37 @@ export default function Signup() {
     confirmPassword: "",
   });
 
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form Data:", formData);
+    setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    // Get existing users from localStorage
+    const users = JSON.parse(localStorage.getItem("users")) || [];
+
+    // Check if email already exists
+    if (users.some((user) => user.email === formData.email)) {
+      setError("Email already registered. Please login.");
+      return;
+    }
+
+    // Add new user
+    users.push(formData);
+    localStorage.setItem("users", JSON.stringify(users));
+
+    alert("Account created successfully!");
+    navigate("/login"); // Redirect to login
   };
 
   return (
@@ -31,19 +55,17 @@ export default function Signup() {
           </div>
         </div>
 
-        {/* Heading */}
         <h2 className="text-2xl font-semibold text-center mb-2">Create Account</h2>
-        <p className="text-gray-500 text-center mb-6">
-          Join CampusEventHub today
-        </p>
+        <p className="text-gray-500 text-center mb-4">Join CampusEventHub today</p>
 
-        {/* Form */}
+        {error && (
+          <p className="text-red-500 text-center mb-4">{error}</p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Full Name */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              Full Name
-            </label>
+            <label className="block text-gray-700 text-sm font-medium mb-1">Full Name</label>
             <div className="relative">
               <MdPerson className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -60,9 +82,7 @@ export default function Signup() {
 
           {/* Email */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              Email Address
-            </label>
+            <label className="block text-gray-700 text-sm font-medium mb-1">Email Address</label>
             <div className="relative">
               <MdEmail className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -79,9 +99,7 @@ export default function Signup() {
 
           {/* College */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              College/University
-            </label>
+            <label className="block text-gray-700 text-sm font-medium mb-1">College/University</label>
             <div className="relative">
               <MdSchool className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -98,9 +116,7 @@ export default function Signup() {
 
           {/* Role */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              Role
-            </label>
+            <label className="block text-gray-700 text-sm font-medium mb-1">Role</label>
             <select
               name="role"
               value={formData.role}
@@ -115,9 +131,7 @@ export default function Signup() {
 
           {/* Password */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              Password
-            </label>
+            <label className="block text-gray-700 text-sm font-medium mb-1">Password</label>
             <div className="relative">
               <MdLock className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -134,9 +148,7 @@ export default function Signup() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">
-              Confirm Password
-            </label>
+            <label className="block text-gray-700 text-sm font-medium mb-1">Confirm Password</label>
             <div className="relative">
               <MdLock className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -151,7 +163,6 @@ export default function Signup() {
             </div>
           </div>
 
-          {/* Button */}
           <button
             type="submit"
             className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-md hover:opacity-90 transition"
@@ -160,7 +171,6 @@ export default function Signup() {
           </button>
         </form>
 
-        {/* Footer */}
         <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{" "}
           <Link to="/login" className="text-purple-600 font-medium hover:underline">
