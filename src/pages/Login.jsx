@@ -8,27 +8,37 @@ export default function Login() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // Find user with matching email and password
-    const user = users.find(
-      (u) => u.email === email && u.password === password
-    );
+      const data = await res.json();
 
-    if (!user) {
-      setError("User not found or wrong credentials. Please signup first.");
-      return;
-    }
+      if (!res.ok) {
+        setError(data.message || "Something went wrong");
+        return;
+      }
 
-    // Redirect based on role
-    if (user.role === "Super Admin" || user.role === "College Admin") {
-      navigate("/admin");
-    } else {
-      navigate("/dashboard");
+      // Save token or user info in localStorage/session if needed
+      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("token", data.token);
+
+      // Redirect based on role
+      if (data.user.role === "Super Admin" || data.user.role === "College Admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Network error");
     }
   };
 
@@ -42,13 +52,9 @@ export default function Login() {
         </div>
 
         <h2 className="text-2xl font-semibold text-center mb-2">Welcome Back</h2>
-        <p className="text-gray-500 text-center mb-4">
-          Sign in to your CampusEventHub account
-        </p>
+        <p className="text-gray-500 text-center mb-4">Sign in to your CampusEventHub account</p>
 
-        {error && (
-          <p className="text-red-500 text-center mb-4">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">

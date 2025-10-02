@@ -19,7 +19,7 @@ export default function Signup() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -28,27 +28,31 @@ export default function Signup() {
       return;
     }
 
-    // Get existing users from localStorage
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    // Check if email already exists
-    if (users.some((user) => user.email === formData.email)) {
-      setError("Email already registered. Please login.");
-      return;
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Something went wrong");
+        return;
+      }
+
+      alert("Account created successfully!");
+      navigate("/login");
+    } catch (err) {
+      console.error(err);
+      setError("Network error");
     }
-
-    // Add new user
-    users.push(formData);
-    localStorage.setItem("users", JSON.stringify(users));
-
-    alert("Account created successfully!");
-    navigate("/login"); // Redirect to login
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-slate-50 to-slate-100">
       <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
-        {/* Icon */}
         <div className="flex justify-center mb-4">
           <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl">
             👤
@@ -58,9 +62,7 @@ export default function Signup() {
         <h2 className="text-2xl font-semibold text-center mb-2">Create Account</h2>
         <p className="text-gray-500 text-center mb-4">Join CampusEventHub today</p>
 
-        {error && (
-          <p className="text-red-500 text-center mb-4">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Full Name */}
