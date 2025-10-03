@@ -32,7 +32,7 @@ export default function Login() {
 
       // Redirect based on role
       if (data.user.role === "Super Admin" || data.user.role === "College Admin") {
-        navigate("/admin");
+        navigate("/admindashboard");
       } else {
         navigate("/dashboard");
       }
@@ -111,3 +111,7 @@ export default function Login() {
     </div>
   );
 }
+
+
+
+
