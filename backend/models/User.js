@@ -1,7 +1,7 @@
 import { db } from "../config/db.js";
 
-export function findByEmail(email, callback) {
-  db.query("SELECT * FROM users WHERE email = ?", [email], callback);
+export function findByEmail(email,callback){
+  db.query("SELECT * FROM users WHERE email = ?",[email],callback);
 }
 
 export function create(user, callback) {
