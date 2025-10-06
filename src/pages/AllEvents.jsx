@@ -1,60 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Calendar, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import Navbar from "./Navbar";
+import Navbar from "../components/Navbar";
+import { getEvents } from "../../api/api"; // Import your API functions
 
 export default function AllEvents() {
   const [search, setSearch] = useState("");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [typeFilter, setTypeFilter] = useState("All Types");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const navigate = useNavigate();
+  const [events, setEvents] = useState([]);
 
-  // Updated events: type and status as strings
-  const events = [
-    {
-      id: 1,
-      title: "Cultural Fest - Harmony 2024",
-      college: "Arts College",
-      date: "2/9/2024",
-      time: "11:30 PM",
-      location: "City Cultural Center",
-      participants: "342 / 500",
-      type: "Cultural",
-      status: "Completed",
-      tags: ["music", "dance", "art", "culture"],
-      image:
-        "https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2?q=80&w=1200",
-    },
-    {
-      id: 2,
-      title: "Inter-College Hackathon",
-      college: "Engineering College",
-      date: "21/12/2024",
-      time: "10:00 AM",
-      location: "Tech Park",
-      participants: "210 / 300",
-      type: "Hackathon",
-      status: "Completed",
-      tags: ["hackathon", "coding", "innovation"],
-      image:
-        "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200",
-    },
-    {
-      id: 3,
-      title: "Cycling Championship",
-      college: "Sports College",
-      date: "20/11/2025",
-      time: "3:00 PM",
-      location: "National Stadium",
-      participants: "150 / 200",
-      type: "Sports",
-      status: "Upcoming",
-      tags: ["cycling", "tournament"],
-      image:
-        "https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    },
-  ];
+  // Fetch events from backend
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const res = await getEvents();
+      setEvents(res.data); // assuming res.data is an array of events
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Filter logic
   const filtered = events.filter((ev) => {
@@ -69,7 +37,7 @@ export default function AllEvents() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar/>
+      <Navbar />
 
       {/* ===== Main ===== */}
       <main className="max-w-7xl mx-auto px-6 py-8">
@@ -126,12 +94,11 @@ export default function AllEvents() {
           {filtered.map((event) => (
             <div
               key={event.id}
-              onClick={() => setSelectedEvent(event)}
-              className="bg-white rounded-xl shadow hover:shadow-md transition border border-gray-100 overflow-hidden cursor-pointer transform hover:scale-[1.02]"
+              className="bg-white rounded-xl shadow hover:shadow-md transition border border-gray-100 overflow-hidden transform hover:scale-[1.02]"
             >
               <div className="relative">
                 <img
-                  src={event.image}
+                  src={`http://localhost:5000/uploads/${event.image}`} // adjust path if needed
                   alt={event.title}
                   className="w-full h-44 object-cover"
                 />
@@ -149,6 +116,13 @@ export default function AllEvents() {
                   <Calendar size={16} className="mr-1" />
                   {event.date}
                 </div>
+                {/* Register Button */}
+                <button
+                  className="mt-3 w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+                  onClick={() => alert("Registration functionality coming soon!")}
+                >
+                  Register
+                </button>
               </div>
             </div>
           ))}
@@ -166,7 +140,7 @@ export default function AllEvents() {
             {/* Header Image */}
             <div className="relative">
               <img
-                src={selectedEvent.image}
+                src={`http://localhost:5000/uploads/${selectedEvent.image}`}
                 alt={selectedEvent.title}
                 className="w-full h-60 object-cover rounded-t-2xl"
               />
@@ -193,7 +167,7 @@ export default function AllEvents() {
               <div className="mb-4">
                 <p className="font-semibold text-gray-800">Tags</p>
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  {selectedEvent.tags.map((tag, i) => (
+                  {selectedEvent.tags?.map((tag, i) => (
                     <span key={i} className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full">{tag}</span>
                   ))}
                 </div>

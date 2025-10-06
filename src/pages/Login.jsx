@@ -31,10 +31,14 @@ export default function Login() {
       localStorage.setItem("token", data.token);
 
       // Redirect based on role
-      if (data.user.role === "Super Admin" || data.user.role === "College Admin") {
-        navigate("/admindashboard");
-      } else {
+      if (data.user.role === "Super Admin"){ 
+        navigate("/superadmindashboard"); 
+      }
+      else if(data.user.role === "College Admin"){
         navigate("/dashboard");
+      }
+       else {
+        navigate("/events");
       }
     } catch (err) {
       console.error(err);
