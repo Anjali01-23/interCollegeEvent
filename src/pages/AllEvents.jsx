@@ -6,7 +6,7 @@ import { getEvents } from "../../api/api"; // Import your API functions
 export default function AllEvents() {
   const [search, setSearch] = useState("");
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [typeFilter, setTypeFilter] = useState("All Types");
+  const [typeFilter, setTypeFilter] = useState("All Category");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [events, setEvents] = useState([]);
 
@@ -28,7 +28,7 @@ export default function AllEvents() {
   const filtered = events.filter((ev) => {
     const matchSearch = ev.title.toLowerCase().includes(search.toLowerCase());
     const matchType =
-      typeFilter === "All Types" || ev.type.toLowerCase() === typeFilter.toLowerCase();
+      typeFilter === "All Category" || ev.category.toLowerCase() === typeFilter.toLowerCase();
     const matchStatus =
       statusFilter === "All Status" || ev.status.toLowerCase() === statusFilter.toLowerCase();
 
@@ -64,7 +64,7 @@ export default function AllEvents() {
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             >
-              <option>All Types</option>
+              <option>All Category</option>
               <option>Cultural</option>
               <option>Hackathon</option>
               <option>Sports</option>
@@ -81,7 +81,7 @@ export default function AllEvents() {
             </select>
 
             <button
-              onClick={() => { setTypeFilter("All Types"); setStatusFilter("All Status"); setSearch(""); }}
+              onClick={() => { setTypeFilter("All Category"); setStatusFilter("All Status"); setSearch(""); }}
               className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition"
             >
               Clear Filters
@@ -93,9 +93,11 @@ export default function AllEvents() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((event) => (
             <div
-              key={event.id}
-              className="bg-white rounded-xl shadow hover:shadow-md transition border border-gray-100 overflow-hidden transform hover:scale-[1.02]"
-            >
+  key={event._id}
+  onClick={() => setSelectedEvent(event)} // 👈 this opens the popup
+  className="bg-white rounded-xl shadow hover:shadow-md transition border border-gray-100 overflow-hidden transform hover:scale-[1.02] cursor-pointer"
+>
+
               <div className="relative">
                 <img
                   src={`http://localhost:5000/uploads/${event.image}`} // adjust path if needed
@@ -118,11 +120,14 @@ export default function AllEvents() {
                 </div>
                 {/* Register Button */}
                 <button
-                  className="mt-3 w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
-                  onClick={() => alert("Registration functionality coming soon!")}
-                >
-                  Register
-                </button>
+  className="mt-3 w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+  onClick={(e) => {
+    e.stopPropagation(); // stops the card click from triggering
+    alert("Registration functionality coming soon!");
+  }}
+>
+  Register
+</button>
               </div>
             </div>
           ))}
@@ -158,29 +163,15 @@ export default function AllEvents() {
               <p className="text-gray-600 mb-4">College: {selectedEvent.college}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <Info label="Date" value={selectedEvent.date} />
-                <Info label="Start Time" value={selectedEvent.time} />
-                <Info label="Location" value={selectedEvent.location} />
-                <Info label="Participants" value={selectedEvent.participants} />
+                <Info label="Start Date" value={new Date(selectedEvent.startDate).toLocaleDateString()} />
+                <Info label="End Date" value={new Date(selectedEvent.endDate).toLocaleDateString()} />
+                <Info label="Category" value={selectedEvent.category} />
+                <Info label="Status" value={selectedEvent.status} />
               </div>
 
               <div className="mb-4">
-                <p className="font-semibold text-gray-800">Tags</p>
-                <div className="flex gap-2 mt-2 flex-wrap">
-                  {selectedEvent.tags?.map((tag, i) => (
-                    <span key={i} className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full">{tag}</span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <p className="font-semibold text-gray-800">Requirements</p>
-                <p className="text-gray-600 text-sm">Registration required for participation.</p>
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-800">Prizes</p>
-                <p className="text-gray-600 text-sm">Exciting prizes await!</p>
+             <p className="font-semibold text-gray-800">Description</p>
+             <p className="text-gray-600 text-sm">{selectedEvent.description}</p>
               </div>
             </div>
           </div>

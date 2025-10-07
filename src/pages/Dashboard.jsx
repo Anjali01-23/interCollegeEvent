@@ -272,86 +272,131 @@ const Dashboard = () => {
 
       {/* Create Event Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white w-[90%] max-w-3xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto p-6 animate-fadeIn">
-            <h2 className="text-2xl font-bold text-purple-700 mb-4">Create Event</h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <input
-                type="text"
-                name="title"
-                placeholder="Event Title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="text"
-                name="description"
-                placeholder="Description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="text"
-                name="category"
-                placeholder="Category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="date"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="text"
-                name="college"
-                placeholder="College Name"
-                value={formData.college}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="file"
-                name="image"
-                onChange={handleChange}
-                accept="image/*"
-              />
-              <select name="status" value={formData.status} onChange={handleChange}>
-                <option value="upcoming">Upcoming</option>
-                <option value="completed">Completed</option>
-              </select>
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white w-[90%] max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto p-8 animate-fadeIn">
+      <h2 className="text-3xl font-bold text-purple-700 mb-6 text-center">
+        Create New Event
+      </h2>
 
-              <div className="flex gap-4 mt-4">
-                <button
-                  type="submit"
-                  className="bg-purple-500 text-white px-4 py-2 rounded-lg"
-                >
-                  Create Event
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="bg-gray-300 px-4 py-2 rounded-lg"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        {/* Title */}
+        <input
+          type="text"
+          name="title"
+          placeholder="Enter Event Title"
+          value={formData.title}
+          onChange={handleChange}
+          required
+          className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-purple-400 focus:outline-none text-lg"
+        />
+
+        {/* Description */}
+        <textarea
+          name="description"
+          placeholder="Enter Event Description"
+          value={formData.description}
+          onChange={handleChange}
+          required
+          rows="3"
+          className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-purple-400 focus:outline-none text-lg"
+        />
+
+        {/* Category & College */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input
+            type="text"
+            name="category"
+            placeholder="Category (e.g., Sports, Tech, Cultural)"
+            value={formData.category}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-purple-400 focus:outline-none text-lg"
+          />
+
+          <input
+            type="text"
+            name="college"
+            placeholder="College Name"
+            value={formData.college}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-purple-400 focus:outline-none text-lg"
+          />
+        </div>
+
+        {/* Dates */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <label className="text-gray-600 text-sm mb-1 font-medium">
+              Start Date
+            </label>
+            <input
+              type="date"
+              name="startDate"
+              value={formData.startDate}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-purple-400 focus:outline-none text-lg"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-gray-600 text-sm mb-1 font-medium">
+              End Date
+            </label>
+            <input
+              type="date"
+              name="endDate"
+              value={formData.endDate}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-purple-400 focus:outline-none text-lg"
+            />
           </div>
         </div>
-      )}
+
+        {/* Image & Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          <input
+            type="file"
+            name="image"
+            onChange={handleChange}
+            accept="image/*"
+            className="w-full border border-gray-300 rounded-xl p-3 text-gray-600 cursor-pointer focus:ring-2 focus:ring-purple-400 focus:outline-none"
+          />
+
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-purple-400 focus:outline-none text-lg"
+          >
+            <option value="upcoming">Upcoming</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex justify-end gap-4 mt-6">
+          <button
+            type="button"
+            onClick={() => setShowCreateModal(false)}
+            className="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-lg shadow hover:opacity-90 transition"
+          >
+            Create Event
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
