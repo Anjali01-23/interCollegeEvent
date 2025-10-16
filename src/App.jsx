@@ -7,6 +7,8 @@ import AllEvents from './pages/AllEvents'
 import Home from './pages/Home'
 import Unauthorized from './pages/Unauthorized'
 import ProtectedRoute from './components/ProtectedRoute'
+import ParticipantDashboard from './pages/ParticipantDashboard'
+import MyRegistrations from './pages/MyRegistrations'
 const App = () => {
   return (
     <>
@@ -25,6 +27,13 @@ const App = () => {
        </ProtectedRoute>
         }/>
       <Route path='/unauthorized' element={<Unauthorized/>}/>
+      <Route path='/participant-dashboard' element={ <ProtectedRoute allowedRoles={["College Admin"]}>
+        <ParticipantDashboard/>
+       </ProtectedRoute>}/>
+      <Route/>
+      <Route path='/myregistrations' element={ <ProtectedRoute allowedRoles={["Student"]}>
+        <MyRegistrations/>
+       </ProtectedRoute>}/>
       <Route/>
     </Routes>
     </>

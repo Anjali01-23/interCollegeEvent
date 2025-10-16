@@ -51,14 +51,14 @@ const Navbar = () => {
           {role === "Student" && (
             <>
               <Link to="/events">Student Dashboard</Link>
-              <Link to="/feedback">Feedback</Link>
+              <Link to="/myregistrations">My Registrations</Link>
             </>
           )}
 
           {role === "College Admin" && (
             <>
               <Link to="/dashboard">Admin Panel</Link>
-              <Link to="/analysis">Feedback Analysis</Link>
+              <Link to="/participant-dashboard">Participant Management Dashboard</Link>
             </>
           )}
 

@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-
+import registrationRoutes from "./routes/registrations.js";
 import authRoutes from "./routes/auth.js";
 import eventRoutes from "./routes/events.js"; // New events routes
 
@@ -20,5 +20,5 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes); // Event routes
-
+app.use("/api/registrations", registrationRoutes);
 app.listen(port, () => console.log(`Server running on port ${port}`));

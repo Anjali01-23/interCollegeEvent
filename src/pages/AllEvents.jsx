@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Search, Calendar, X } from "lucide-react";
 import Navbar from "../components/Navbar";
-import { getEvents } from "../../api/api"; // Import your API functions
+import axios from "axios";
+import { getEvents } from "../../api/api";
+import { createRegistration } from "../../api/api";
 
 export default function AllEvents() {
   const [search, setSearch] = useState("");
@@ -9,8 +11,67 @@ export default function AllEvents() {
   const [typeFilter, setTypeFilter] = useState("All Category");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [events, setEvents] = useState([]);
+  const [selectedEventForReg, setSelectedEventForReg] = useState(null);
 
-  // Fetch events from backend
+  const [showRegModal, setShowRegModal] = useState(false);
+
+  const [regForm, setRegForm] = useState({
+    name: "",
+    college: "",
+    age: "",
+    gender: "",
+    email: "",
+    phone: "",
+  });
+
+  // ===== Registration Form Handlers =====
+  const handleRegChange = (e) => {
+    const { name, value } = e.target;
+    setRegForm({ ...regForm, [name]: value });
+  };
+
+  const handlecross=()=>{
+    setShowRegModal(false);
+    setRegForm({
+        name: "",
+        college: "",
+        age: "",
+        gender: "",
+        email: "",
+        phone: "",
+      });
+  }
+  const handleRegSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const user=JSON.parse(localStorage.getItem("user"));
+      const studentId=user.id;
+      const payload = {
+      student_id: studentId,       // mandatory
+      event_id: selectedEventForReg.id,   // mandatory
+      ...regForm,                  // form fields: name, college, age, gender, email, phone
+      status: "pending",           // default status
+      };
+      console.log(payload);
+      await createRegistration(payload);
+      alert("Registration submitted successfully!");
+      setShowRegModal(false);
+      setRegForm({
+        name: "",
+        college: "",
+        age: "",
+        gender: "",
+        email: "",
+        phone: "",
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit registration. Try again.");
+    }
+  };
+
+  // ===== Fetch Events =====
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -18,22 +79,33 @@ export default function AllEvents() {
   const fetchEvents = async () => {
     try {
       const res = await getEvents();
-      setEvents(res.data); // assuming res.data is an array of events
+      setEvents(res.data);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Filter logic
+  // ===== Filter Logic =====
   const filtered = events.filter((ev) => {
     const matchSearch = ev.title.toLowerCase().includes(search.toLowerCase());
     const matchType =
-      typeFilter === "All Category" || ev.category.toLowerCase() === typeFilter.toLowerCase();
+      typeFilter === "All Category" ||
+      ev.category.toLowerCase() === typeFilter.toLowerCase();
     const matchStatus =
-      statusFilter === "All Status" || ev.status.toLowerCase() === statusFilter.toLowerCase();
+      statusFilter === "All Status" ||
+      ev.status.toLowerCase() === statusFilter.toLowerCase();
 
     return matchSearch && matchType && matchStatus;
   });
+
+  // Helper: format date to dd-mm-yyyy
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const d = String(date.getDate()).padStart(2, "0");
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const y = date.getFullYear();
+    return `${d}-${m}-${y}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -81,7 +153,11 @@ export default function AllEvents() {
             </select>
 
             <button
-              onClick={() => { setTypeFilter("All Category"); setStatusFilter("All Status"); setSearch(""); }}
+              onClick={() => {
+                setTypeFilter("All Category");
+                setStatusFilter("All Status");
+                setSearch("");
+              }}
               className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition"
             >
               Clear Filters
@@ -89,18 +165,17 @@ export default function AllEvents() {
           </div>
         </div>
 
-        {/* Events Grid */}
+        {/* ===== Events Grid ===== */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((event) => (
             <div
-  key={event._id}
-  onClick={() => setSelectedEvent(event)} // 👈 this opens the popup
-  className="bg-white rounded-xl shadow hover:shadow-md transition border border-gray-100 overflow-hidden transform hover:scale-[1.02] cursor-pointer"
->
-
+              key={event._id}
+              onClick={() => setSelectedEvent(event)}
+              className="bg-white rounded-xl shadow hover:shadow-md transition border border-gray-100 overflow-hidden transform hover:scale-[1.02] cursor-pointer"
+            >
               <div className="relative">
                 <img
-                  src={`http://localhost:5000/uploads/${event.image}`} // adjust path if needed
+                  src={`http://localhost:5000/uploads/${event.image}`}
                   alt={event.title}
                   className="w-full h-44 object-cover"
                 />
@@ -112,37 +187,53 @@ export default function AllEvents() {
               </div>
 
               <div className="p-4">
-                <h2 className="font-bold text-lg text-gray-800 mb-1">{event.title}</h2>
+                <h2 className="font-bold text-lg text-gray-800 mb-1">
+                  {event.title}
+                </h2>
                 <p className="text-gray-600 text-sm">{event.college}</p>
                 <div className="flex items-center text-sm text-gray-500 mt-2">
                   <Calendar size={16} className="mr-1" />
-                  {event.date}
+                  {formatDate(event.startDate)} - {formatDate(event.endDate)}
                 </div>
+
                 {/* Register Button */}
+                <div className="flex w-full gap-3">
                 <button
-  className="mt-3 w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
-  onClick={(e) => {
-    e.stopPropagation(); // stops the card click from triggering
-    alert("Registration functionality coming soon!");
-  }}
->
-  Register
-</button>
+                  className="mt-3 w-1/2 mr-1 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedEventForReg(event);
+                    setShowRegModal(true);
+                  }}
+                >
+                  Register
+                </button>
+
+                <button
+                  className="mt-3 w-1/2 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+                  onClick={(e) => {
+                    
+                  }}
+                >
+                  Give Feedback
+                </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
         {filtered.length === 0 && (
-          <p className="text-center text-gray-500 mt-8">No events match your filters.</p>
+          <p className="text-center text-gray-500 mt-8">
+            No events match your filters.
+          </p>
         )}
       </main>
 
-      {/* ===== Modal ===== */}
+      {/* ===== Event Detail Modal ===== */}
       {selectedEvent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white w-[90%] max-w-3xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto animate-fadeIn">
-            {/* Header Image */}
             <div className="relative">
               <img
                 src={`http://localhost:5000/uploads/${selectedEvent.image}`}
@@ -157,23 +248,80 @@ export default function AllEvents() {
               </button>
             </div>
 
-            {/* Details */}
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-purple-700 mb-2">{selectedEvent.title}</h2>
-              <p className="text-gray-600 mb-4">College: {selectedEvent.college}</p>
+              <h2 className="text-2xl font-bold text-purple-700 mb-2">
+                {selectedEvent.title}
+              </h2>
+              <p className="text-gray-600 mb-4">
+                College: {selectedEvent.college}
+              </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <Info label="Start Date" value={new Date(selectedEvent.startDate).toLocaleDateString()} />
-                <Info label="End Date" value={new Date(selectedEvent.endDate).toLocaleDateString()} />
+                <Info label="Start Date" value={formatDate(selectedEvent.startDate)} />
+                <Info label="End Date" value={formatDate(selectedEvent.endDate)} />
                 <Info label="Category" value={selectedEvent.category} />
                 <Info label="Status" value={selectedEvent.status} />
               </div>
 
               <div className="mb-4">
-             <p className="font-semibold text-gray-800">Description</p>
-             <p className="text-gray-600 text-sm">{selectedEvent.description}</p>
+                <p className="font-semibold text-gray-800">Description</p>
+                <p className="text-gray-600 text-sm">
+                  {selectedEvent.description}
+                </p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Registration Modal ===== */}
+      {showRegModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-6 animate-fadeIn relative">
+            <button
+              onClick={handlecross}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-xl font-bold text-purple-700 mb-4 text-center">
+              Event Registration
+            </h2>
+
+            <form onSubmit={handleRegSubmit} className="space-y-3">
+              {["name", "college", "age", "email", "phone"].map((field) => (
+                <input
+                  key={field}
+                  type={field === "age" ? "number" : "text"}
+                  name={field}
+                  value={regForm[field]}
+                  onChange={handleRegChange}
+                  placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              ))}
+
+              <select
+                name="gender"
+                value={regForm.gender}
+                onChange={handleRegChange}
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+              >
+                <option value="">Select Gender</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+
+              <button
+                type="submit"
+                className="w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+              >
+                Submit Registration
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -181,7 +329,7 @@ export default function AllEvents() {
   );
 }
 
-// Helper component
+// Helper Component
 const Info = ({ label, value }) => (
   <div>
     <p className="text-sm text-gray-500">{label}</p>

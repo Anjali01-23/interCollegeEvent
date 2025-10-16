@@ -46,4 +46,40 @@ router.patch("/:id/status", (req, res) => {
   });
 });
 
+//DELETE EVENTS
+router.delete("/:id", (req, res) => {
+  const { id } = req.params;
+  const query = "DELETE FROM events WHERE id = ?";
+ console.log("Deleting event with id:", req.params.id);
+  db.query(query, [id], (err, result) => {
+    if (err) return res.status(500).json(err);
+    res.json({ message: "Event deleted successfully" });
+  });
+});
+
+
+// UPDATE event (all fields including optional image)
+router.put("/:id", upload.single("image"), (req, res) => {
+  const { id } = req.params;
+  const { title, description, startDate, endDate, college, category, status } = req.body;
+  const image = req.file ? req.file.filename : null;
+
+  // Build the query dynamically if image is provided
+  const query = image
+    ? "UPDATE events SET title=?, description=?, startDate=?, endDate=?, college=?, category=?, status=?, image=? WHERE id=?"
+    : "UPDATE events SET title=?, description=?, startDate=?, endDate=?, college=?, category=?, status=? WHERE id=?";
+
+  const params = image
+    ? [title, description, startDate, endDate, college, category, status, image, id]
+    : [title, description, startDate, endDate, college, category, status, id];
+
+  db.query(query, params, (err, result) => {
+    if (err) {
+      console.error("❌ Error updating event:", err);
+      return res.status(500).json({ message: "Database error", error: err });
+    }
+    res.json({ message: "Event updated successfully" });
+  });
+});
+
 export default router;
