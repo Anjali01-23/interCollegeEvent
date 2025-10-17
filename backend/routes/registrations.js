@@ -4,29 +4,25 @@ import { Delete } from "lucide-react";
 import { BiRegistered } from "react-icons/bi";
 const router = express.Router();
 
-//Create Registartion
-router.post("/", async (req, res) => {
-  try {
-    const { student_id,event_id, name, college, age, gender, email, phone } = req.body;
+router.post("/", (req, res) => {
+  const { student_id, event_id, name, college, age, gender, email, phone } = req.body;
 
-    if (!student_id||!event_id || !name || !email) {
-      return res.status(400).json({ message: "Missing required fields" });
+  console.log("Received registration data:", req.body);
+
+  const sql = `
+    INSERT INTO registrations (student_id, event_id, name, college, age, gender, email, phone, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+  `;
+
+  db.query(sql, [student_id, event_id, name, college, age, gender, email, phone], (err, result) => {
+    if (err) {
+      console.error("DB ERROR:", err); // <-- This will print the real MySQL error
+      return res.status(500).json({ message: "Failed to register", error: err });
     }
-
-    const sql = `
-      INSERT INTO registrations (student_id,event_id, name, college, age, gender, email, phone, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
-    `;
-
-    db.query(sql, [student_id,event_id, name, college, age, gender, email, phone]);
-
+    console.log("Registration saved:", result);
     res.status(201).json({ message: "Registration request submitted successfully!" });
-  } catch (err) {
-    console.error("Error submitting registration:", err);
-    res.status(500).json({ message: "Server error" });
-  }
+  });
 });
-
 
 // 📍 Get all registration requests (for admin)
 router.get("/", (req, res) => {
