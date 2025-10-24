@@ -3,6 +3,7 @@ import { deleteEvent } from "../../api/api";
 import { Trash2 } from "lucide-react"; // for trash icon
 import { Edit } from "lucide-react"; // at top of file
 import { updateEvent } from "../../api/api";
+import { getAllFeedback, deleteFeedback } from "../../api/api";
 import {
   Calendar,
   BarChart2,
@@ -22,6 +23,9 @@ const Dashboard = () => {
   const [events, setEvents] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const[requests,setRequests]=useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
+
+  
 
   const [formData, setFormData] = useState({
     title: "",
@@ -47,6 +51,37 @@ const Dashboard = () => {
   useEffect(() => {
     fetchEvents();
   }, []);
+
+ //Fetch feedbacks
+  const fetchFeedbacks = async () => {
+  try {
+    const res = await getAllFeedback();
+    setFeedbacks(res.data); // set feedback data in state
+  } catch (err) {
+    console.error("Failed to fetch feedbacks:", err);
+  }
+};
+
+useEffect(() => {
+  if (activeTab === "analytics") {
+    fetchFeedbacks();
+  }
+}, [activeTab]);
+
+//Delete feedback
+const handleDeleteFeedback = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this feedback?")) return;
+
+  try {
+    await deleteFeedback(id);
+    alert("Feedback deleted successfully!");
+    setFeedbacks(feedbacks.filter(f => f.id !== id)); // remove from state
+  } catch (err) {
+    console.error(err);
+    alert("Failed to delete feedback. Try again.");
+  }
+};
+
 
   // Form change handler
   const handleChange = (e) => {
@@ -369,13 +404,44 @@ const handleEditEvent = (event) => {
         )}
 
         {activeTab === "analytics" && (
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h2 className="text-lg font-semibold">Analytics</h2>
-            <p className="text-gray-500 text-sm mt-2">
-              Analytics data will appear here.
-            </p>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {feedbacks.length === 0 ? (
+      <p className="text-gray-500 text-sm">No feedback available.</p>
+    ) : (
+      feedbacks.map((f) => (
+        <div key={f.id} className="bg-white p-4 rounded-xl shadow relative">
+          {/* Delete button */}
+          <button
+            onClick={() => handleDeleteFeedback(f.id)}
+            className="absolute top-3 right-3 text-red-500 hover:text-red-700"
+          >
+            <Trash2 size={18} />
+          </button>
+
+          {/* User Info */}
+          <p className="font-semibold text-gray-800">{f.student_name}</p>
+          <p className="text-gray-500 text-sm mb-2">{f.student_email}</p>
+
+          {/* Rating */}
+          <div className="flex mb-2">
+            {[1,2,3,4,5].map((star) => (
+              <span
+                key={star}
+                className={`text-xl ${star <= f.rating ? "text-yellow-400" : "text-gray-300"}`}
+              >
+                ★
+              </span>
+            ))}
           </div>
-        )}
+
+          {/* Feedback text */}
+          <p className="text-gray-700 text-sm">{f.feedback}</p>
+        </div>
+      ))
+    )}
+  </div>
+)}
+
       </main>
 
       {/* Create Event Modal */}

@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import axios from "axios";
 import { getEvents } from "../../api/api";
 import { createRegistration } from "../../api/api";
+import { createFeedback } from "../../api/api";
 
 export default function AllEvents() {
   const [search, setSearch] = useState("");
@@ -14,6 +15,11 @@ export default function AllEvents() {
   const [selectedEventForReg, setSelectedEventForReg] = useState(null);
 
   const [showRegModal, setShowRegModal] = useState(false);
+  const [showFeedback,setShowFeedback]=useState(false);
+  const [rating, setRating] = useState(0);
+  const [feedbackText, setFeedbackText] = useState("");
+
+
 
   const [regForm, setRegForm] = useState({
     name: "",
@@ -106,6 +112,37 @@ export default function AllEvents() {
     const y = date.getFullYear();
     return `${d}-${m}-${y}`;
   };
+
+
+
+  const handleFeedbackSubmit = async () => {
+  if (!rating || !feedbackText.trim()) {
+    alert("Please give a rating and write feedback before submitting!");
+    return;
+  }
+
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const studentId = user.id;
+
+    const payload = {
+      student_id: studentId,
+      event_id: selectedEventForReg ? selectedEventForReg.id : null,
+      rating,
+      feedback: feedbackText,
+    };
+
+    await createFeedback(payload);
+
+    alert("Feedback submitted successfully!");
+    setShowFeedback(false);
+    setRating(0);
+    setFeedbackText("");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to submit feedback. Try again!");
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -212,7 +249,9 @@ export default function AllEvents() {
                 <button
                   className="mt-3 w-1/2 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
                   onClick={(e) => {
-                    
+                    e.stopPropagation();
+                    setSelectedEventForReg(event);
+                    setShowFeedback(true);
                   }}
                 >
                   Give Feedback
@@ -325,6 +364,60 @@ export default function AllEvents() {
           </div>
         </div>
       )}
+
+      {/* ===== Feedback Modal ===== */}
+{showFeedback && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70]">
+    <div className="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-6 animate-fadeIn relative">
+      {/* Close Button */}
+      <button
+        onClick={() => setShowFeedback(false)}
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+      >
+        <X size={20} />
+      </button>
+
+      {/* Modal Title */}
+      <h2 className="text-xl font-bold text-purple-700 mb-4 text-center">
+        Give Feedback
+      </h2>
+
+      {/* Rating Selection */}
+      <div className="flex justify-center mb-4">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span
+            key={star}
+            onClick={() => setRating(star)}
+            className={`cursor-pointer text-2xl ${
+              star <= rating ? "text-yellow-400" : "text-gray-300"
+            }`}
+          >
+            ★
+          </span>
+        ))}
+      </div>
+
+      {/* Feedback Textarea */}
+      <textarea
+        value={feedbackText}
+        onChange={(e) => setFeedbackText(e.target.value)}
+        placeholder="Write your feedback..."
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 h-24 focus:ring-2 focus:ring-purple-500 outline-none"
+      />
+
+      {/* Submit Button */}
+      <button
+        onClick={handleFeedbackSubmit}
+        className="mt-4 w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+      >
+        Submit Feedback
+      </button>
+    </div>
+  </div>
+)}
+
+
+
     </div>
   );
 }

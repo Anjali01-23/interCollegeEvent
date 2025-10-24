@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import registrationRoutes from "./routes/registrations.js";
 import authRoutes from "./routes/auth.js";
 import eventRoutes from "./routes/events.js"; // New events routes
+import feedbackRouter from "./routes/feedback.js";
+
 
 dotenv.config();
 const app = express();
@@ -21,4 +23,5 @@ app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes); // Event routes
 app.use("/api/registrations", registrationRoutes);
+app.use("/api/feedback", feedbackRouter);
 app.listen(port, () => console.log(`Server running on port ${port}`));

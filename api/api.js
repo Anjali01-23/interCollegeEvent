@@ -52,3 +52,21 @@ export const getStudentRegistrations = (studentId) => {
 //To delete Registration
 export const cancelRegistration = (id) =>
   axios.delete(`${BASE_REG_URL}/${id}`);
+
+
+// ===== Feedback APIs =====
+const BASE_FEEDBACK_URL = "http://localhost:5000/api/feedback";
+
+// Submit feedback (student)
+export const createFeedback = (data) =>
+  axios.post(BASE_FEEDBACK_URL, data);
+
+// Get all feedbacks (admin)
+export const getAllFeedback = () => axios.get(BASE_FEEDBACK_URL);
+
+// Get feedback stats (admin)
+export const getFeedbackStats = () => axios.get(`${BASE_FEEDBACK_URL}/stats`);
+
+// Delete feedback (admin)
+export const deleteFeedback = (id) =>
+  axios.delete(`${BASE_FEEDBACK_URL}/${id}`);
