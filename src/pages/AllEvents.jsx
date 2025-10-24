@@ -246,16 +246,29 @@ export default function AllEvents() {
                   Register
                 </button>
 
-                <button
-                  className="mt-3 w-1/2 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedEventForReg(event);
-                    setShowFeedback(true);
-                  }}
-                >
-                  Give Feedback
-                </button>
+                {event.status && event.status.toLowerCase() === "completed" ? (
+    <button
+      className="mt-3 w-1/2 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedEventForReg(event);
+        setShowFeedback(true);
+      }}
+    >
+      Give Feedback
+    </button>
+  ) : (
+    <button
+      className="mt-3 w-1/2 bg-gray-300 text-gray-700 py-2 rounded-lg cursor-not-allowed"
+      onClick={(e) => {
+        e.stopPropagation();
+        // optional toast/alert
+        alert("Event is still upcoming. Feedback allowed only after event is completed.");
+      }}
+    >
+      Give Feedback
+    </button>
+  )}
                 </div>
               </div>
             </div>
@@ -381,6 +394,10 @@ export default function AllEvents() {
       <h2 className="text-xl font-bold text-purple-700 mb-4 text-center">
         Give Feedback
       </h2>
+      
+      {selectedEventForReg && (
+  <p className="text-sm text-gray-700 mb-2 text-center">Event: {selectedEventForReg.title}</p>
+)}
 
       {/* Rating Selection */}
       <div className="flex justify-center mb-4">
