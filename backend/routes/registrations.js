@@ -4,25 +4,48 @@ import { Delete } from "lucide-react";
 import { BiRegistered } from "react-icons/bi";
 const router = express.Router();
 
+
+// registrations.js (replace existing router.post("/") with this)
 router.post("/", (req, res) => {
   const { student_id, event_id, name, college, age, gender, email, phone } = req.body;
 
-  console.log("Received registration data:", req.body);
+  if (!student_id || (typeof event_id === "undefined" || event_id === null)) {
+    return res.status(400).json({ message: "student_id and event_id are required" });
+  }
 
-  const sql = `
-    INSERT INTO registrations (student_id, event_id, name, college, age, gender, email, phone, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-  `;
-
-  db.query(sql, [student_id, event_id, name, college, age, gender, email, phone], (err, result) => {
-    if (err) {
-      console.error("DB ERROR:", err); // <-- This will print the real MySQL error
-      return res.status(500).json({ message: "Failed to register", error: err });
+  // 1) Check if already registered
+  const checkSql = `SELECT id, status FROM registrations WHERE student_id = ? AND event_id = ? LIMIT 1`;
+  db.query(checkSql, [student_id, event_id], (checkErr, checkRows) => {
+    if (checkErr) {
+      console.error("DB ERROR (check):", checkErr);
+      return res.status(500).json({ message: "Server error" });
     }
-    console.log("Registration saved:", result);
-    res.status(201).json({ message: "Registration request submitted successfully!" });
+
+    if (checkRows.length > 0) {
+      // Already registered
+      return res.status(400).json({ message: "You have already registered for this event", registration: checkRows[0] });
+    }
+
+    // 2) Insert new registration
+    const sql = `
+      INSERT INTO registrations (student_id, event_id, name, college, age, gender, email, phone, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+    `;
+    db.query(sql, [student_id, event_id, name, college, age, gender, email, phone], (err, result) => {
+      if (err) {
+        console.error("DB ERROR (insert):", err);
+        // handle unique constraint fallback (race)
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).json({ message: "You have already registered for this event (duplicate detected)" });
+        }
+        return res.status(500).json({ message: "Failed to register", error: err });
+      }
+      return res.status(201).json({ message: "Registration request submitted successfully!", id: result.insertId });
+    });
   });
 });
+
+
 
 // 📍 Get all registration requests (for admin)
 router.get("/", (req, res) => {

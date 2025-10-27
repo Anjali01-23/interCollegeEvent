@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Search, Calendar, X } from "lucide-react";
 import Navbar from "../components/Navbar";
-import axios from "axios";
-import { getEvents } from "../../api/api";
-import { createRegistration } from "../../api/api";
-import { createFeedback } from "../../api/api";
+import { getEvents, getStudentRegistrations } from "../../api/api";
+import { createRegistration, createFeedback } from "../../api/api";
 
 export default function AllEvents() {
   const [search, setSearch] = useState("");
@@ -15,11 +13,11 @@ export default function AllEvents() {
   const [selectedEventForReg, setSelectedEventForReg] = useState(null);
 
   const [showRegModal, setShowRegModal] = useState(false);
-  const [showFeedback,setShowFeedback]=useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [rating, setRating] = useState(0);
   const [feedbackText, setFeedbackText] = useState("");
 
-
+  const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
 
   const [regForm, setRegForm] = useState({
     name: "",
@@ -36,31 +34,38 @@ export default function AllEvents() {
     setRegForm({ ...regForm, [name]: value });
   };
 
-  const handlecross=()=>{
+  const handlecross = () => {
     setShowRegModal(false);
     setRegForm({
-        name: "",
-        college: "",
-        age: "",
-        gender: "",
-        email: "",
-        phone: "",
-      });
-  }
+      name: "",
+      college: "",
+      age: "",
+      gender: "",
+      email: "",
+      phone: "",
+    });
+  };
   const handleRegSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
-      const user=JSON.parse(localStorage.getItem("user"));
-      const studentId=user.id;
+      const user = JSON.parse(localStorage.getItem("user"));
+      const studentId = user.id;
       const payload = {
-      student_id: studentId,       // mandatory
-      event_id: selectedEventForReg.id,   // mandatory
-      ...regForm,                  // form fields: name, college, age, gender, email, phone
-      status: "pending",           // default status
+        student_id: studentId, // mandatory
+        event_id: selectedEventForReg.id || selectedEventForReg._id, // mandatory
+        ...regForm, // form fields: name, college, age, gender, email, phone
+        status: "pending", // default status
       };
       console.log(payload);
       await createRegistration(payload);
+      // optimistic UI update after successful registration
+      setRegisteredEventIds((prev) => {
+        const copy = new Set(prev);
+        copy.add(Number(selectedEventForReg.id ?? selectedEventForReg._id));
+        return copy;
+      });
+
       alert("Registration submitted successfully!");
       setShowRegModal(false);
       setRegForm({
@@ -73,13 +78,31 @@ export default function AllEvents() {
       });
     } catch (err) {
       console.error(err);
-      alert("Failed to submit registration. Try again.");
+      const msg = err.response?.data?.message || "Failed to submit registration. Try again.";
+      alert(msg);
     }
   };
 
   // ===== Fetch Events =====
   useEffect(() => {
     fetchEvents();
+  }, []);
+
+  // fetch student registrations (for disabling register button)
+  useEffect(() => {
+    const loadStudentRegs = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user?.id) return;
+        const res = await getStudentRegistrations(user.id);
+        // adapt the property name if your backend uses a different key (e.g., event_id)
+        const ids = new Set(res.data.map((r) => Number(r.event_id ?? r.eventId ?? r.event_id)));
+        setRegisteredEventIds(ids);
+      } catch (err) {
+        console.error("Failed to load student registrations", err);
+      }
+    };
+    loadStudentRegs();
   }, []);
 
   const fetchEvents = async () => {
@@ -96,10 +119,10 @@ export default function AllEvents() {
     const matchSearch = ev.title.toLowerCase().includes(search.toLowerCase());
     const matchType =
       typeFilter === "All Category" ||
-      ev.category.toLowerCase() === typeFilter.toLowerCase();
+      (ev.category && ev.category.toLowerCase() === typeFilter.toLowerCase());
     const matchStatus =
       statusFilter === "All Status" ||
-      ev.status.toLowerCase() === statusFilter.toLowerCase();
+      (ev.status && ev.status.toLowerCase() === statusFilter.toLowerCase());
 
     return matchSearch && matchType && matchStatus;
   });
@@ -113,44 +136,42 @@ export default function AllEvents() {
     return `${d}-${m}-${y}`;
   };
 
-
-
   const handleFeedbackSubmit = async () => {
-  if (!rating || !feedbackText.trim()) {
-    alert("Please give a rating and write feedback before submitting!");
-    return;
-  }
+    if (!rating || !feedbackText.trim()) {
+      alert("Please give a rating and write feedback before submitting!");
+      return;
+    }
 
-  try {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const studentId = user.id;
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const studentId = user.id;
 
-    const payload = {
-      student_id: studentId,
-      event_id: selectedEventForReg ? selectedEventForReg.id : null,
-      rating,
-      feedback: feedbackText,
-    };
+      const payload = {
+        student_id: studentId,
+        event_id: selectedEventForReg ? (selectedEventForReg.id || selectedEventForReg._id) : null,
+        rating,
+        feedback: feedbackText,
+      };
 
-    await createFeedback(payload);
+      await createFeedback(payload);
 
-    alert("Feedback submitted successfully!");
-    setShowFeedback(false);
-    setRating(0);
-    setFeedbackText("");
-  } catch (err) {
-    console.error(err);
-    alert("Failed to submit feedback. Try again!");
-  }
-};
+      alert("Feedback submitted successfully!");
+      setShowFeedback(false);
+      setRating(0);
+      setFeedbackText("");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit feedback. Try again!");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
       {/* ===== Main ===== */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">All Events</h1>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-6">All Events</h1>
 
         {/* Search */}
         <div className="relative mb-6">
@@ -203,89 +224,101 @@ export default function AllEvents() {
         </div>
 
         {/* ===== Events Grid ===== */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((event) => (
-            <div
-              key={event._id}
-              onClick={() => setSelectedEvent(event)}
-              className="bg-white rounded-xl shadow hover:shadow-md transition border border-gray-100 overflow-hidden transform hover:scale-[1.02] cursor-pointer"
-            >
-              <div className="relative">
-                <img
-                  src={`http://localhost:5000/uploads/${event.image}`}
-                  alt={event.title}
-                  className="w-full h-44 object-cover"
-                />
-                <div className="absolute top-2 left-2 flex gap-2 flex-wrap">
-                  <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full shadow-sm">
-                    {event.status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4">
-                <h2 className="font-bold text-lg text-gray-800 mb-1">
-                  {event.title}
-                </h2>
-                <p className="text-gray-600 text-sm">{event.college}</p>
-                <div className="flex items-center text-sm text-gray-500 mt-2">
-                  <Calendar size={16} className="mr-1" />
-                  {formatDate(event.startDate)} - {formatDate(event.endDate)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((event) => {
+            const eventId = Number(event.id ?? event._id);
+            const isRegistered = registeredEventIds.has(eventId);
+            return (
+              <article
+                key={event.id ?? event._id}
+                onClick={() => setSelectedEvent(event)}
+                className="bg-white rounded-xl shadow hover:shadow-md transition border border-gray-100 overflow-hidden transform hover:scale-[1.02] cursor-pointer"
+              >
+                <div className="relative">
+                  <img
+                    src={`http://localhost:5000/uploads/${event.image}`}
+                    alt={event.title}
+                    loading="lazy"
+                    className="w-full h-44 sm:h-48 md:h-56 object-cover"
+                  />
+                  <div className="absolute top-2 left-2 flex gap-2 flex-wrap">
+                    <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full shadow-sm">
+                      {event.status}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Register Button */}
-                <div className="flex w-full gap-3">
-                <button
-                  className="mt-3 w-1/2 mr-1 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedEventForReg(event);
-                    setShowRegModal(true);
-                  }}
-                >
-                  Register
-                </button>
+                <div className="p-4">
+                  <h2 className="font-bold text-lg text-gray-800 mb-1 truncate">{event.title}</h2>
+                  <p className="text-gray-600 text-sm truncate">{event.college}</p>
+                  <div className="flex items-center text-sm text-gray-500 mt-2">
+                    <Calendar size={16} className="mr-1" />
+                    {formatDate(event.startDate)} - {formatDate(event.endDate)}
+                  </div>
 
-                {event.status && event.status.toLowerCase() === "completed" ? (
-    <button
-      className="mt-3 w-1/2 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
-      onClick={(e) => {
-        e.stopPropagation();
-        setSelectedEventForReg(event);
-        setShowFeedback(true);
-      }}
-    >
-      Give Feedback
-    </button>
-  ) : (
-    <button
-      className="mt-3 w-1/2 bg-gray-300 text-gray-700 py-2 rounded-lg cursor-not-allowed"
-      onClick={(e) => {
-        e.stopPropagation();
-        // optional toast/alert
-        alert("Event is still upcoming. Feedback allowed only after event is completed.");
-      }}
-    >
-      Give Feedback
-    </button>
-  )}
+                  {/* Register + Feedback Buttons: stacked on mobile, side-by-side on sm+ */}
+                  <div className="mt-3 flex flex-col sm:flex-row gap-3">
+                    {isRegistered ? (
+                      <button
+                        className="w-full sm:w-1/2 bg-gray-200 text-gray-600 py-2 rounded-lg cursor-not-allowed"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          alert("You have already registered for this event.");
+                        }}
+                      >
+                        Registered
+                      </button>
+                    ) : (
+                      <button
+                        className="w-full sm:w-1/2 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEventForReg(event);
+                          setShowRegModal(true);
+                        }}
+                      >
+                        Register
+                      </button>
+                    )}
+
+                    {event.status && event.status.toLowerCase() === "completed" ? (
+                      <button
+                        className="w-full sm:w-1/2 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEventForReg(event);
+                          setShowFeedback(true);
+                        }}
+                      >
+                        Give Feedback
+                      </button>
+                    ) : (
+                      <button
+                        className="w-full sm:w-1/2 bg-gray-300 text-gray-700 py-2 rounded-lg cursor-not-allowed"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          alert("Event is still upcoming. Feedback allowed only after event is completed.");
+                        }}
+                      >
+                        Give Feedback
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </article>
+            );
+          })}
         </div>
 
         {filtered.length === 0 && (
-          <p className="text-center text-gray-500 mt-8">
-            No events match your filters.
-          </p>
+          <p className="text-center text-gray-500 mt-8">No events match your filters.</p>
         )}
       </main>
 
       {/* ===== Event Detail Modal ===== */}
       {selectedEvent && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white w-[90%] max-w-3xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto animate-fadeIn">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-3xl md:max-w-4xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto animate-fadeIn">
             <div className="relative">
               <img
                 src={`http://localhost:5000/uploads/${selectedEvent.image}`}
@@ -301,12 +334,8 @@ export default function AllEvents() {
             </div>
 
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-purple-700 mb-2">
-                {selectedEvent.title}
-              </h2>
-              <p className="text-gray-600 mb-4">
-                College: {selectedEvent.college}
-              </p>
+              <h2 className="text-2xl font-bold text-purple-700 mb-2">{selectedEvent.title}</h2>
+              <p className="text-gray-600 mb-4">College: {selectedEvent.college}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <Info label="Start Date" value={formatDate(selectedEvent.startDate)} />
@@ -317,9 +346,7 @@ export default function AllEvents() {
 
               <div className="mb-4">
                 <p className="font-semibold text-gray-800">Description</p>
-                <p className="text-gray-600 text-sm">
-                  {selectedEvent.description}
-                </p>
+                <p className="text-gray-600 text-sm">{selectedEvent.description}</p>
               </div>
             </div>
           </div>
@@ -328,17 +355,12 @@ export default function AllEvents() {
 
       {/* ===== Registration Modal ===== */}
       {showRegModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-6 animate-fadeIn relative">
-            <button
-              onClick={handlecross}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
-            >
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md md:max-w-lg p-6 animate-fadeIn relative">
+            <button onClick={handlecross} className="absolute top-3 right-3 text-gray-500 hover:text-gray-800">
               <X size={20} />
             </button>
-            <h2 className="text-xl font-bold text-purple-700 mb-4 text-center">
-              Event Registration
-            </h2>
+            <h2 className="text-xl font-bold text-purple-700 mb-4 text-center">Event Registration</h2>
 
             <form onSubmit={handleRegSubmit} className="space-y-3">
               {["name", "college", "age", "email", "phone"].map((field) => (
@@ -367,10 +389,7 @@ export default function AllEvents() {
                 <option>Other</option>
               </select>
 
-              <button
-                type="submit"
-                className="w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
-              >
+              <button type="submit" className="w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition">
                 Submit Registration
               </button>
             </form>
@@ -379,62 +398,47 @@ export default function AllEvents() {
       )}
 
       {/* ===== Feedback Modal ===== */}
-{showFeedback && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70]">
-    <div className="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-6 animate-fadeIn relative">
-      {/* Close Button */}
-      <button
-        onClick={() => setShowFeedback(false)}
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
-      >
-        <X size={20} />
-      </button>
+      {showFeedback && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md md:max-w-lg p-6 animate-fadeIn relative">
+            {/* Close Button */}
+            <button onClick={() => setShowFeedback(false)} className="absolute top-3 right-3 text-gray-500 hover:text-gray-800">
+              <X size={20} />
+            </button>
 
-      {/* Modal Title */}
-      <h2 className="text-xl font-bold text-purple-700 mb-4 text-center">
-        Give Feedback
-      </h2>
-      
-      {selectedEventForReg && (
-  <p className="text-sm text-gray-700 mb-2 text-center">Event: {selectedEventForReg.title}</p>
-)}
+            {/* Modal Title */}
+            <h2 className="text-xl font-bold text-purple-700 mb-4 text-center">Give Feedback</h2>
 
-      {/* Rating Selection */}
-      <div className="flex justify-center mb-4">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span
-            key={star}
-            onClick={() => setRating(star)}
-            className={`cursor-pointer text-2xl ${
-              star <= rating ? "text-yellow-400" : "text-gray-300"
-            }`}
-          >
-            ★
-          </span>
-        ))}
-      </div>
+            {selectedEventForReg && <p className="text-sm text-gray-700 mb-2 text-center">Event: {selectedEventForReg.title}</p>}
 
-      {/* Feedback Textarea */}
-      <textarea
-        value={feedbackText}
-        onChange={(e) => setFeedbackText(e.target.value)}
-        placeholder="Write your feedback..."
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 h-24 focus:ring-2 focus:ring-purple-500 outline-none"
-      />
+            {/* Rating Selection */}
+            <div className="flex justify-center mb-4">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  onClick={() => setRating(star)}
+                  className={`cursor-pointer text-2xl ${star <= rating ? "text-yellow-400" : "text-gray-300"}`}
+                >
+                  ★
+                </span>
+              ))}
+            </div>
 
-      {/* Submit Button */}
-      <button
-        onClick={handleFeedbackSubmit}
-        className="mt-4 w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
-      >
-        Submit Feedback
-      </button>
-    </div>
-  </div>
-)}
+            {/* Feedback Textarea */}
+            <textarea
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Write your feedback..."
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 h-24 focus:ring-2 focus:ring-purple-500 outline-none"
+            />
 
-
-
+            {/* Submit Button */}
+            <button onClick={handleFeedbackSubmit} className="mt-4 w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition">
+              Submit Feedback
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
