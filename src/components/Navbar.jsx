@@ -83,7 +83,7 @@ const Navbar = () => {
       return (
         <>
           <Link to="/dashboard" className="block md:inline-block">Admin Panel</Link>
-          <Link to="/participant-dashboard" className="block md:inline-block">Participant Management</Link>
+          <Link to="/participant-dashboard" className="block md:inline-block">Participant Management Dashboard</Link>
         </>
       );
     }
@@ -136,7 +136,7 @@ const Navbar = () => {
                         {user.fullname || user.name || "Unknown User"}
                       </p>
                       <p className="px-4 py-2 text-gray-500 text-sm border-b">{user.email || "No email found"}</p>
-                      <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100">
+                      <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-200">
                         Logout
                       </button>
                     </div>
@@ -180,7 +180,7 @@ const Navbar = () => {
                   <div className="text-sm font-medium text-gray-800">{user.fullname || user.name || user.email}</div>
                   <div className="text-xs text-gray-500">{user.role}</div>
                 </div>
-                <button onClick={handleLogout} className="w-full text-left px-3 py-2 rounded-md text-sm bg-gray-100 hover:bg-gray-200 flex items-center gap-2">
+                <button onClick={handleLogout} className="w-full text-left px-3 py-2 rounded-md text-sm bg-gray-200 hover:bg-gray-300 flex items-center gap-2">
                   Logout
                 </button>
               </>

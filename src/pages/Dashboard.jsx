@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react"; // for trash icon
 import { Edit } from "lucide-react"; // at top of file
 import { updateEvent } from "../../api/api";
 import { getAllFeedback, deleteFeedback } from "../../api/api";
+
 import {
   Calendar,
   BarChart2,
@@ -197,6 +198,75 @@ const Dashboard = () => {
   const averageParticipants =
     events.length > 0 ? Math.round(requests.length / events.length) : 0;
 
+    
+
+// inside component (e.g. above return)
+const exportRegistrationsCSV = async () => {
+  try {
+    const res = await getRegistrations();
+    const rows = res.data || [];
+
+    if (rows.length === 0) {
+      alert("No registrations to export.");
+      return;
+    }
+
+    // Columns you want in CSV (order / header names)
+    const headers = [
+      "id",
+      "student_id",
+      "event_id",
+      "name",
+      "college",
+      "age",
+      "gender",
+      "email",
+      "status",
+    ];
+
+    // Build CSV content
+    const csvRows = [];
+    csvRows.push(headers.join(",")); // header row
+
+    rows.forEach((r) => {
+      const values = headers.map((h) => {
+        let v = r[h];
+
+        // Format dates safely
+        if (h === "created_at" && v) {
+          v = new Date(v).toLocaleString(); // readable format
+        }
+
+        // Escape any quotes and commas
+        if (v === null || v === undefined) v = "";
+        v = String(v).replace(/"/g, '""'); // escape quotes
+        if (v.includes(",") || v.includes("\n") || v.includes('"')) {
+          v = `"${v}"`;
+        }
+        return v;
+      });
+      csvRows.push(values.join(","));
+    });
+
+    const csvString = csvRows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+
+    // filename with date
+    const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
+    a.download = `registrations_${ts}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Export failed", err);
+    alert("Failed to export registrations. Check console.");
+  }
+};
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -307,8 +377,14 @@ const Dashboard = () => {
                   >
                     <Plus size={16} /> Create New Event
                   </button>
-                  <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">View All Registrations</button>
-                  <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">Export Event Data</button>
+                  <button
+  onClick={() => navigate("/participant-dashboard?tab=All Requests")}
+  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200"
+>
+  View All Registrations
+</button>
+
+                  <button onClick={exportRegistrationsCSV}className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">Export Registration Data</button>
                 </div>
               </div>
             </section>

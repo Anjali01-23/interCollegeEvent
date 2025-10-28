@@ -104,27 +104,31 @@ router.get("/accepted-participants", (req, res) => {
 });
 
 
-// 📍 Get all registrations for a specific student
+// 📍 Get all registrations for a specific student (returns event_id)
 router.get("/student/:id", (req, res) => {
   const studentId = req.params.id;
 
   const sql = `
-    SELECT r.id, r.status, r.created_at,
-           e.title AS event_name,e.startDate
+    SELECT r.id AS registration_id,
+           r.event_id,
+           r.status,
+           r.created_at,
+           e.title AS event_name,
+           e.startDate
     FROM registrations r
-    JOIN events e ON r.event_id = e.id
+    LEFT JOIN events e ON r.event_id = e.id
     WHERE r.student_id = ?
     ORDER BY r.created_at DESC
   `;
 
   db.query(sql, [studentId], (err, results) => {
     if (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Failed to fetch registrations" });
+      return res.status(500).json({ message: "Failed to fetch registrations", error: err });
     }
     res.json(results);
   });
 });
+
 
 router.delete("/:id",(req,res)=>{
   const { id } = req.params;

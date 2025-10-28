@@ -4,16 +4,22 @@ import { useState } from "react";
 import NewRequest from "../components/participants/NewRequest";
 import AllRequest from "../components/participants/AllRequest";
 import ParticipantList from "../components/participants/ParticipantList";
+import { useLocation } from "react-router-dom";
 
 const ParticipantDashboard = () => {
-  const [activeTab, setActiveTab] = useState("New Requests");
+  const location = useLocation();
+const params = new URLSearchParams(location.search);
+const defaultTab = params.get("tab") || "New Requests";
+const [activeTab, setActiveTab] = useState(defaultTab);
+
 
   const tabs = ["New Requests", "All Requests", "Participants"];
 
   return (
     <>
-      <Navbar />
+      
       <div className="min-h-screen bg-gray-50">
+        <Navbar />
         {/* Header */}
         <header className="px-4 sm:px-6 lg:px-8 pt-6">
           <div className="max-w-7xl mx-auto">

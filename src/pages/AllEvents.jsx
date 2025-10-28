@@ -17,6 +17,7 @@ export default function AllEvents() {
   const [rating, setRating] = useState(0);
   const [feedbackText, setFeedbackText] = useState("");
 
+  // Store registered event ids as string keys
   const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
 
   const [regForm, setRegForm] = useState({
@@ -45,46 +46,21 @@ export default function AllEvents() {
       phone: "",
     });
   };
-  const handleRegSubmit = async (e) => {
-    e.preventDefault();
 
+  // ===== Fetch Events =====
+  const fetchEvents = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      const studentId = user.id;
-      const payload = {
-        student_id: studentId, // mandatory
-        event_id: selectedEventForReg.id || selectedEventForReg._id, // mandatory
-        ...regForm, // form fields: name, college, age, gender, email, phone
-        status: "pending", // default status
-      };
-      console.log(payload);
-      await createRegistration(payload);
-      // optimistic UI update after successful registration
-      setRegisteredEventIds((prev) => {
-        const copy = new Set(prev);
-        copy.add(Number(selectedEventForReg.id ?? selectedEventForReg._id));
-        return copy;
-      });
-
-      alert("Registration submitted successfully!");
-      setShowRegModal(false);
-      setRegForm({
-        name: "",
-        college: "",
-        age: "",
-        gender: "",
-        email: "",
-        phone: "",
-      });
+      const res = await getEvents();
+      setEvents(res.data || []);
+      return res.data || [];
     } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.message || "Failed to submit registration. Try again.";
-      alert(msg);
+      console.error("Failed to fetch events", err);
+      return [];
     }
   };
 
-  // ===== Fetch Events =====
   useEffect(() => {
+    // load events on mount
     fetchEvents();
   }, []);
 
@@ -94,29 +70,105 @@ export default function AllEvents() {
       try {
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user?.id) return;
+
+        // Ensure events are loaded so we can try matching by name if event_id missing
+        let currentEvents = events;
+        if (!currentEvents || currentEvents.length === 0) {
+          currentEvents = await fetchEvents();
+        }
+
         const res = await getStudentRegistrations(user.id);
-        // adapt the property name if your backend uses a different key (e.g., event_id)
-        const ids = new Set(res.data.map((r) => Number(r.event_id ?? r.eventId ?? r.event_id)));
+        const ids = new Set(
+          res.data
+            .map((r) => {
+              // Try common event id keys first
+              const idFromRow = r.event_id ?? r.eventId ?? r.eventId ?? r.event;
+              if (idFromRow !== undefined && idFromRow !== null) return String(idFromRow);
+
+              // fallback: try to match by event_name against loaded events
+              if (r.event_name && currentEvents && currentEvents.length > 0) {
+                const match = currentEvents.find(
+                  (ev) =>
+                    (ev.title && ev.title.toString().trim().toLowerCase()) ===
+                    r.event_name.toString().trim().toLowerCase()
+                );
+                if (match) return String(match.id ?? match._id ?? match._id);
+              }
+
+              // If nothing found, return undefined (will be filtered out)
+              return undefined;
+            })
+            .filter((v) => v !== undefined && v !== null)
+        );
+
+        // Debug log (can remove later)
+        // console.log("registered event ids (as strings):", Array.from(ids));
+
         setRegisteredEventIds(ids);
       } catch (err) {
         console.error("Failed to load student registrations", err);
       }
     };
     loadStudentRegs();
-  }, []);
+    // We intentionally do not include `events` as dependency to avoid re-running too often.
+    // If you want it to re-run when events change, add `events` to dependency array.
+  }, []); // run once on mount
 
-  const fetchEvents = async () => {
+  const handleRegSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const res = await getEvents();
-      setEvents(res.data);
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user?.id) return alert("User not found - please login again.");
+
+      const eventIdValue = selectedEventForReg?.id ?? selectedEventForReg?._id;
+      if (!eventIdValue) {
+        alert("Event id missing. Cannot register.");
+        return;
+      }
+
+      const payload = {
+        student_id: Number(user.id),
+        event_id: Number(eventIdValue),
+        ...regForm,
+        status: "pending",
+      };
+
+      await createRegistration(payload);
+
+      // refresh student registrations from server (recommended)
+      const res = await getStudentRegistrations(user.id);
+      const ids = new Set(
+        res.data
+          .map((r) => {
+            const idFromRow = r.event_id ?? r.eventId ?? r.event;
+            if (idFromRow !== undefined && idFromRow !== null) return String(idFromRow);
+            if (r.event_name) {
+              const match = (events || []).find(
+                (ev) =>
+                  (ev.title && ev.title.toString().trim().toLowerCase()) ===
+                  r.event_name.toString().trim().toLowerCase()
+              );
+              if (match) return String(match.id ?? match._id);
+            }
+            return undefined;
+          })
+          .filter((v) => v !== undefined && v !== null)
+      );
+      setRegisteredEventIds(ids);
+
+      alert("Registration submitted successfully!");
+      setShowRegModal(false);
+      setRegForm({ name: "", college: "", age: "", gender: "", email: "", phone: "" });
     } catch (err) {
-      console.error(err);
+      console.error("Registration failed", err, err.response?.data);
+      const serverMsg = err.response?.data?.message || JSON.stringify(err.response?.data) || err.message;
+      alert("Failed to submit registration: " + serverMsg);
     }
   };
 
   // ===== Filter Logic =====
   const filtered = events.filter((ev) => {
-    const matchSearch = ev.title.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = ev.title?.toLowerCase().includes(search.toLowerCase());
     const matchType =
       typeFilter === "All Category" ||
       (ev.category && ev.category.toLowerCase() === typeFilter.toLowerCase());
@@ -226,8 +278,10 @@ export default function AllEvents() {
         {/* ===== Events Grid ===== */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((event) => {
-            const eventId = Number(event.id ?? event._id);
-            const isRegistered = registeredEventIds.has(eventId);
+            // normalize event key to string
+            const eventKey = String(event.id ?? event._id ?? event._id ?? "");
+            const isRegistered = registeredEventIds.has(eventKey);
+
             return (
               <article
                 key={event.id ?? event._id}
@@ -260,7 +314,7 @@ export default function AllEvents() {
                   <div className="mt-3 flex flex-col sm:flex-row gap-3">
                     {isRegistered ? (
                       <button
-                        className="w-full sm:w-1/2 bg-gray-200 text-gray-600 py-2 rounded-lg cursor-not-allowed"
+                        className="w-full sm:w-1/2 bg-gray-300 text-gray-600 py-2 rounded-lg cursor-not-allowed"
                         onClick={(e) => {
                           e.stopPropagation();
                           alert("You have already registered for this event.");

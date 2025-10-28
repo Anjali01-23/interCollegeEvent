@@ -53,7 +53,7 @@ const AllRequest = () => {
       return;
     }
 
-    const headers = ["ID", "Name", "Email", "Event ID", "Status", "Created At"];
+    const headers = ["ID", "Name", "Email", "Event ID", "Status"];
     const csv = [
       headers.join(","),
       ...rows.map((r) =>
@@ -63,7 +63,6 @@ const AllRequest = () => {
           `"${(r.email || "").replace(/"/g, '""')}"`,
           r.event_id ?? "",
           r.status ?? "",
-          r.created_at ?? "",
         ].join(",")
       ),
     ].join("\n");
@@ -110,7 +109,7 @@ const AllRequest = () => {
             className="px-3 py-2 bg-indigo-600 text-white rounded-md text-sm hover:opacity-90"
             title="Export visible rows to CSV"
           >
-            Export CSV
+            Export Data
           </button>
         </div>
       </div>
@@ -133,7 +132,6 @@ const AllRequest = () => {
                   <th className="p-3 border-b">Email</th>
                   <th className="p-3 border-b">Event ID</th>
                   <th className="p-3 border-b">Status</th>
-                  <th className="p-3 border-b">Created At</th>
                 </tr>
               </thead>
               <tbody>
@@ -150,7 +148,6 @@ const AllRequest = () => {
                     >
                       {formatStatus(req.status)}
                     </td>
-                    <td className="p-3 text-sm border-b">{req.created_at ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -177,7 +174,6 @@ const AllRequest = () => {
                     >
                       {formatStatus(req.status)}
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">{req.created_at ?? "-"}</div>
                   </div>
                 </div>
               </div>
