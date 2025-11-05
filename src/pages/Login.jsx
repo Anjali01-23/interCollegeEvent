@@ -31,13 +31,11 @@ export default function Login() {
       localStorage.setItem("token", data.token);
 
       // Redirect based on role
-      if (data.user.role === "Super Admin"){ 
-        navigate("/superadmindashboard"); 
-      }
-      else if(data.user.role === "College Admin"){
+      if (data.user.role === "Super Admin") {
+        navigate("/superadmindashboard");
+      } else if (data.user.role === "College Admin") {
         navigate("/dashboard");
-      }
-       else {
+      } else {
         navigate("/events");
       }
     } catch (err) {
@@ -47,8 +45,8 @@ export default function Login() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-slate-50 to-slate-100">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
+    <div className="flex justify-center items-center min-h-screen bg-gray-900 text-gray-100">
+      <div className="bg-gray-800 shadow-lg rounded-xl p-8 w-full max-w-md border border-gray-700">
         <div className="flex justify-center mb-4">
           <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl">
             📧
@@ -56,9 +54,9 @@ export default function Login() {
         </div>
 
         <h2 className="text-2xl font-semibold text-center mb-2">Welcome Back</h2>
-        <p className="text-gray-500 text-center mb-4">Sign in to your CampusEventHub account</p>
+        <p className="text-gray-300 text-center mb-4">Sign in to your CampusEventHub account</p>
 
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        {error && <p className="text-red-400 text-center mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
@@ -68,7 +66,8 @@ export default function Login() {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                         bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600"
               required
             />
           </div>
@@ -80,7 +79,8 @@ export default function Login() {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                         bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600"
               required
             />
           </div>
@@ -88,7 +88,7 @@ export default function Login() {
           <div className="flex justify-end">
             <Link
               to="/forgot-password"
-              className="text-sm text-purple-600 hover:underline"
+              className="text-sm text-indigo-300 hover:underline"
             >
               Forgot password?
             </Link>
@@ -96,17 +96,17 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-md hover:opacity-90 transition"
+            className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-md hover:opacity-90 transition"
           >
             Sign In
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-gray-400">
           Don’t have an account?{" "}
           <Link
             to="/signup"
-            className="text-purple-600 font-medium hover:underline"
+            className="text-indigo-300 font-medium hover:underline"
           >
             Sign up
           </Link>
@@ -115,7 +115,3 @@ export default function Login() {
     </div>
   );
 }
-
-
-
-

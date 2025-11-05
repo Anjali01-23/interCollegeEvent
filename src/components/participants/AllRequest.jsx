@@ -2,10 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getRegistrations } from "../../../api/api";
 
 /**
- * AllRequest — responsive + feature-upgraded version
- * - Table for md+ screens, stacked cards for mobile
- * - Filter by status, quick text search, refresh, export CSV
- * - Loading / error handling
+ * AllRequest — responsive + feature-upgraded version (dark mode)
  */
 
 const AllRequest = () => {
@@ -77,11 +74,11 @@ const AllRequest = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 text-gray-100">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-lg font-semibold">All Requests</h2>
-          <p className="text-sm text-gray-500">View and filter all registration requests</p>
+          <h2 className="text-lg font-semibold text-gray-100">All Requests</h2>
+          <p className="text-sm text-gray-400">View and filter all registration requests</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -90,11 +87,11 @@ const AllRequest = () => {
             placeholder="Search name / email / event id"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 border rounded-md w-60 text-sm"
+            className="px-3 py-2 border rounded-md w-60 text-sm bg-gray-900 border-gray-700 text-gray-100"
           />
 
           <select
-            className="border px-3 py-2 rounded-md text-sm"
+            className="border px-3 py-2 rounded-md text-sm bg-gray-900 border-gray-700 text-gray-100"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           >
@@ -115,35 +112,35 @@ const AllRequest = () => {
       </div>
 
       {loading ? (
-        <div className="rounded-lg bg-white p-6 text-center text-gray-600">Loading requests…</div>
+        <div className="rounded-lg bg-gray-800 p-6 text-center text-gray-400">Loading requests…</div>
       ) : error ? (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-700">{error}</div>
+        <div className="rounded-lg bg-red-800 border border-red-700 p-4 text-red-200">{error}</div>
       ) : filteredRequests.length === 0 ? (
-        <div className="rounded-lg bg-white p-6 text-center text-gray-600">No requests found</div>
+        <div className="rounded-lg bg-gray-800 p-6 text-center text-gray-400">No requests found</div>
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden md:block bg-white rounded-lg shadow overflow-auto">
+          <div className="hidden md:block bg-gray-800 rounded-lg shadow overflow-auto border border-gray-700">
             <table className="min-w-full table-auto">
-              <thead className="bg-gray-50 text-left text-sm text-gray-700">
+              <thead className="bg-gray-900 text-left text-sm text-gray-200">
                 <tr>
-                  <th className="p-3 border-b">ID</th>
-                  <th className="p-3 border-b">Name</th>
-                  <th className="p-3 border-b">Email</th>
-                  <th className="p-3 border-b">Event ID</th>
-                  <th className="p-3 border-b">Status</th>
+                  <th className="p-3 border-b border-gray-700">ID</th>
+                  <th className="p-3 border-b border-gray-700">Name</th>
+                  <th className="p-3 border-b border-gray-700">Email</th>
+                  <th className="p-3 border-b border-gray-700">Event ID</th>
+                  <th className="p-3 border-b border-gray-700">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-gray-50">
-                    <td className="p-3 text-sm border-b">{req.id}</td>
-                    <td className="p-3 text-sm border-b">{req.name}</td>
-                    <td className="p-3 text-sm border-b">{req.email}</td>
-                    <td className="p-3 text-sm border-b">{req.event_id ?? "N/A"}</td>
+                  <tr key={req.id} className="hover:bg-gray-900">
+                    <td className="p-3 text-sm border-b border-gray-700 text-gray-100">{req.id}</td>
+                    <td className="p-3 text-sm border-b border-gray-700 text-gray-100">{req.name}</td>
+                    <td className="p-3 text-sm border-b border-gray-700 text-gray-300">{req.email}</td>
+                    <td className="p-3 text-sm border-b border-gray-700 text-gray-300">{req.event_id ?? "N/A"}</td>
                     <td
-                      className={`p-3 text-sm border-b font-semibold ${
-                        req.status === "accepted" ? "text-green-600" : req.status === "rejected" ? "text-red-600" : "text-yellow-600"
+                      className={`p-3 text-sm border-b border-gray-700 font-semibold ${
+                        req.status === "accepted" ? "text-green-400" : req.status === "rejected" ? "text-red-400" : "text-yellow-400"
                       }`}
                     >
                       {formatStatus(req.status)}
@@ -157,19 +154,19 @@ const AllRequest = () => {
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
             {filteredRequests.map((req) => (
-              <div key={req.id} className="bg-white p-4 rounded-lg shadow-sm border">
+              <div key={req.id} className="bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-700">
                 <div className="flex justify-between items-start">
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-800 truncate">{req.name}</p>
-                    <p className="text-sm text-gray-500 truncate">{req.email}</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Event: <span className="font-medium text-gray-700">{req.event_id ?? "N/A"}</span>
+                    <p className="font-medium text-gray-100 truncate">{req.name}</p>
+                    <p className="text-sm text-gray-400 truncate">{req.email}</p>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Event: <span className="font-medium text-gray-200">{req.event_id ?? "N/A"}</span>
                     </p>
                   </div>
                   <div className="ml-2 text-right">
                     <div
                       className={`text-sm font-semibold ${
-                        req.status === "accepted" ? "text-green-600" : req.status === "rejected" ? "text-red-600" : "text-yellow-600"
+                        req.status === "accepted" ? "text-green-400" : req.status === "rejected" ? "text-red-400" : "text-yellow-400"
                       }`}
                     >
                       {formatStatus(req.status)}

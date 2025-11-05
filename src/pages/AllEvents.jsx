@@ -1,8 +1,14 @@
+// src/pages/AllEvents.jsx
 import React, { useState, useEffect } from "react";
 import { Search, Calendar, X } from "lucide-react";
 import Navbar from "../components/Navbar";
-import { getEvents, getStudentRegistrations } from "../../api/api";
-import { createRegistration, createFeedback } from "../../api/api";
+import {
+  getEvents,
+  getStudentRegistrations,
+  createRegistration,
+  createFeedback,
+  getStudentFeedbacks,
+} from "../../api/api";
 
 export default function AllEvents() {
   const [search, setSearch] = useState("");
@@ -19,6 +25,9 @@ export default function AllEvents() {
 
   // Store registered event ids as string keys
   const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
+
+  // stores event ids for which the current student already gave feedback
+  const [feedbackGiven, setFeedbackGiven] = useState(new Set());
 
   const [regForm, setRegForm] = useState({
     name: "",
@@ -64,6 +73,25 @@ export default function AllEvents() {
     fetchEvents();
   }, []);
 
+  // ===== Load student feedbacks (so we know which events user already rated) =====
+  useEffect(() => {
+    const loadFeedbacks = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user?.id) return;
+
+        const res = await getStudentFeedbacks(user.id);
+        // create a set of event ids (string)
+        const ids = new Set((res.data || []).map((fb) => String(fb.event_id)));
+        setFeedbackGiven(ids);
+      } catch (err) {
+        // If 404 or other error, log but don't crash the page
+        console.error("Failed to load feedbacks", err);
+      }
+    };
+    loadFeedbacks();
+  }, []);
+
   // fetch student registrations (for disabling register button)
   useEffect(() => {
     const loadStudentRegs = async () => {
@@ -79,10 +107,10 @@ export default function AllEvents() {
 
         const res = await getStudentRegistrations(user.id);
         const ids = new Set(
-          res.data
+          (res.data || [])
             .map((r) => {
               // Try common event id keys first
-              const idFromRow = r.event_id ?? r.eventId ?? r.eventId ?? r.event;
+              const idFromRow = r.event_id ?? r.eventId ?? r.event;
               if (idFromRow !== undefined && idFromRow !== null) return String(idFromRow);
 
               // fallback: try to match by event_name against loaded events
@@ -92,7 +120,7 @@ export default function AllEvents() {
                     (ev.title && ev.title.toString().trim().toLowerCase()) ===
                     r.event_name.toString().trim().toLowerCase()
                 );
-                if (match) return String(match.id ?? match._id ?? match._id);
+                if (match) return String(match.id ?? match._id);
               }
 
               // If nothing found, return undefined (will be filtered out)
@@ -101,9 +129,6 @@ export default function AllEvents() {
             .filter((v) => v !== undefined && v !== null)
         );
 
-        // Debug log (can remove later)
-        // console.log("registered event ids (as strings):", Array.from(ids));
-
         setRegisteredEventIds(ids);
       } catch (err) {
         console.error("Failed to load student registrations", err);
@@ -111,7 +136,6 @@ export default function AllEvents() {
     };
     loadStudentRegs();
     // We intentionally do not include `events` as dependency to avoid re-running too often.
-    // If you want it to re-run when events change, add `events` to dependency array.
   }, []); // run once on mount
 
   const handleRegSubmit = async (e) => {
@@ -138,7 +162,7 @@ export default function AllEvents() {
       // refresh student registrations from server (recommended)
       const res = await getStudentRegistrations(user.id);
       const ids = new Set(
-        res.data
+        (res.data || [])
           .map((r) => {
             const idFromRow = r.event_id ?? r.eventId ?? r.event;
             if (idFromRow !== undefined && idFromRow !== null) return String(idFromRow);
@@ -197,33 +221,50 @@ export default function AllEvents() {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
       const studentId = user.id;
+      const eventId = selectedEventForReg ? (selectedEventForReg.id || selectedEventForReg._id) : null;
 
       const payload = {
         student_id: studentId,
-        event_id: selectedEventForReg ? (selectedEventForReg.id || selectedEventForReg._id) : null,
+        event_id: eventId,
         rating,
         feedback: feedbackText,
       };
 
       await createFeedback(payload);
 
+      // success: add this event id to feedbackGiven so UI updates immediately
+      setFeedbackGiven((prev) => new Set(prev).add(String(eventId)));
+
       alert("Feedback submitted successfully!");
       setShowFeedback(false);
       setRating(0);
       setFeedbackText("");
     } catch (err) {
-      console.error(err);
-      alert("Failed to submit feedback. Try again!");
+      console.error("Failed to submit feedback", err);
+
+      // if backend returns 409 for duplicate, show friendly message
+      const status = err.response?.status;
+      const serverMsg = err.response?.data?.message || err.message;
+
+      if (status === 409) {
+        alert(serverMsg || "You have already submitted feedback for this event.");
+        // ensure local state is consistent (in case server already had it)
+        const eventId = selectedEventForReg ? (selectedEventForReg.id || selectedEventForReg._id) : null;
+        if (eventId) setFeedbackGiven((prev) => new Set(prev).add(String(eventId)));
+        setShowFeedback(false);
+      } else {
+        alert("Failed to submit feedback. Try again! " + serverMsg);
+      }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900 text-gray-100">
       <Navbar />
 
       {/* ===== Main ===== */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-6">All Events</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-100 mb-6">All Events</h1>
 
         {/* Search */}
         <div className="relative mb-6">
@@ -232,17 +273,17 @@ export default function AllEvents() {
             placeholder="Search events..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-800 text-gray-100 placeholder-gray-400"
           />
           <Search size={18} className="absolute top-2.5 left-3 text-gray-400" />
         </div>
 
         {/* Filters */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-8">
-          <p className="font-semibold text-gray-700 mb-4">Filters</p>
+        <div className="bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-700 mb-8">
+          <p className="font-semibold text-gray-200 mb-4">Filters</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <select
-              className="border border-gray-300 rounded-lg p-2"
+              className="border border-gray-700 rounded-lg p-2 bg-gray-800 text-gray-100"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             >
@@ -253,7 +294,7 @@ export default function AllEvents() {
             </select>
 
             <select
-              className="border border-gray-300 rounded-lg p-2"
+              className="border border-gray-700 rounded-lg p-2 bg-gray-800 text-gray-100"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -268,7 +309,7 @@ export default function AllEvents() {
                 setStatusFilter("All Status");
                 setSearch("");
               }}
-              className="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition"
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition"
             >
               Clear Filters
             </button>
@@ -279,14 +320,15 @@ export default function AllEvents() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((event) => {
             // normalize event key to string
-            const eventKey = String(event.id ?? event._id ?? event._id ?? "");
+            const eventKey = String(event.id ?? event._id ?? "");
             const isRegistered = registeredEventIds.has(eventKey);
+            const hasGivenFeedback = feedbackGiven.has(String(event.id ?? event._id));
 
             return (
               <article
                 key={event.id ?? event._id}
                 onClick={() => setSelectedEvent(event)}
-                className="bg-white rounded-xl shadow hover:shadow-md transition border border-gray-100 overflow-hidden transform hover:scale-[1.02] cursor-pointer"
+                className="bg-gray-800 rounded-xl shadow hover:shadow-md transition border border-gray-700 overflow-hidden transform hover:scale-[1.02] cursor-pointer"
               >
                 <div className="relative">
                   <img
@@ -303,18 +345,18 @@ export default function AllEvents() {
                 </div>
 
                 <div className="p-4">
-                  <h2 className="font-bold text-lg text-gray-800 mb-1 truncate">{event.title}</h2>
-                  <p className="text-gray-600 text-sm truncate">{event.college}</p>
-                  <div className="flex items-center text-sm text-gray-500 mt-2">
-                    <Calendar size={16} className="mr-1" />
+                  <h2 className="font-bold text-lg text-gray-100 mb-1 truncate">{event.title}</h2>
+                  <p className="text-gray-300 text-sm truncate">{event.college}</p>
+                  <div className="flex items-center text-sm text-gray-400 mt-2">
+                    <Calendar size={16} className="mr-1 text-gray-300" />
                     {formatDate(event.startDate)} - {formatDate(event.endDate)}
                   </div>
 
-                  {/* Register + Feedback Buttons: stacked on mobile, side-by-side on sm+ */}
+                  {/* Register + Feedback Buttons */}
                   <div className="mt-3 flex flex-col sm:flex-row gap-3">
                     {isRegistered ? (
                       <button
-                        className="w-full sm:w-1/2 bg-gray-300 text-gray-600 py-2 rounded-lg cursor-not-allowed"
+                        className="w-full sm:w-1/2 bg-gray-600 text-gray-300 py-2 rounded-lg cursor-not-allowed"
                         onClick={(e) => {
                           e.stopPropagation();
                           alert("You have already registered for this event.");
@@ -322,9 +364,9 @@ export default function AllEvents() {
                       >
                         Registered
                       </button>
-                    ) : (
+                    ) : (event.status && event.status.toLowerCase() === "upcoming" ? (
                       <button
-                        className="w-full sm:w-1/2 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
+                        className="w-full sm:w-1/2 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedEventForReg(event);
@@ -333,22 +375,46 @@ export default function AllEvents() {
                       >
                         Register
                       </button>
-                    )}
-
-                    {event.status && event.status.toLowerCase() === "completed" ? (
-                      <button
-                        className="w-full sm:w-1/2 bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedEventForReg(event);
-                          setShowFeedback(true);
-                        }}
-                      >
-                        Give Feedback
-                      </button>
                     ) : (
                       <button
-                        className="w-full sm:w-1/2 bg-gray-300 text-gray-700 py-2 rounded-lg cursor-not-allowed"
+                        className="w-full sm:w-1/2 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                         alert("Event is already completed so you can't register");
+                        }}
+                      >
+                        Register
+                      </button>
+                    )
+                    )}
+
+                    {/* Feedback button: prevents opening modal if already given */}
+                    {event.status && event.status.toLowerCase() === "completed" ? (
+                      hasGivenFeedback ? (
+                        <button
+                          className="w-full sm:w-1/2 bg-gray-600 text-gray-300 py-2 rounded-lg cursor-not-allowed"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            alert("You have already given feedback for this event.");
+                          }}
+                        >
+                          Feedback Given
+                        </button>
+                      ) : (
+                        <button
+                          className="w-full sm:w-1/2 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEventForReg(event);
+                            setShowFeedback(true);
+                          }}
+                        >
+                          Give Feedback
+                        </button>
+                      )
+                    ) : (
+                      <button
+                        className="w-full sm:w-1/2 bg-gray-600 text-gray-300 py-2 rounded-lg cursor-not-allowed"
                         onClick={(e) => {
                           e.stopPropagation();
                           alert("Event is still upcoming. Feedback allowed only after event is completed.");
@@ -365,14 +431,14 @@ export default function AllEvents() {
         </div>
 
         {filtered.length === 0 && (
-          <p className="text-center text-gray-500 mt-8">No events match your filters.</p>
+          <p className="text-center text-gray-400 mt-8">No events match your filters.</p>
         )}
       </main>
 
       {/* ===== Event Detail Modal ===== */}
       {selectedEvent && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-3xl md:max-w-4xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto animate-fadeIn">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 w-full max-w-3xl md:max-w-4xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto animate-fadeIn border border-gray-700">
             <div className="relative">
               <img
                 src={`http://localhost:5000/uploads/${selectedEvent.image}`}
@@ -381,15 +447,15 @@ export default function AllEvents() {
               />
               <button
                 onClick={() => setSelectedEvent(null)}
-                className="absolute top-4 right-4 bg-white rounded-full p-2 shadow hover:bg-purple-100 transition"
+                className="absolute top-4 right-4 bg-gray-700 rounded-full p-2 shadow hover:bg-purple-700 transition"
               >
-                <X size={22} className="text-purple-600" />
+                <X size={22} className="text-white" />
               </button>
             </div>
 
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-purple-700 mb-2">{selectedEvent.title}</h2>
-              <p className="text-gray-600 mb-4">College: {selectedEvent.college}</p>
+              <h2 className="text-2xl font-bold text-purple-300 mb-2">{selectedEvent.title}</h2>
+              <p className="text-gray-300 mb-4">College: {selectedEvent.college}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <Info label="Start Date" value={formatDate(selectedEvent.startDate)} />
@@ -399,8 +465,8 @@ export default function AllEvents() {
               </div>
 
               <div className="mb-4">
-                <p className="font-semibold text-gray-800">Description</p>
-                <p className="text-gray-600 text-sm">{selectedEvent.description}</p>
+                <p className="font-semibold text-gray-100">Description</p>
+                <p className="text-gray-300 text-sm">{selectedEvent.description}</p>
               </div>
             </div>
           </div>
@@ -409,12 +475,12 @@ export default function AllEvents() {
 
       {/* ===== Registration Modal ===== */}
       {showRegModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md md:max-w-lg p-6 animate-fadeIn relative">
-            <button onClick={handlecross} className="absolute top-3 right-3 text-gray-500 hover:text-gray-800">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-gray-800 rounded-2xl shadow-xl w-full max-w-md md:max-w-lg p-6 animate-fadeIn relative border border-gray-700">
+            <button onClick={handlecross} className="absolute top-3 right-3 text-gray-300 hover:text-white">
               <X size={20} />
             </button>
-            <h2 className="text-xl font-bold text-purple-700 mb-4 text-center">Event Registration</h2>
+            <h2 className="text-xl font-bold text-purple-300 mb-4 text-center">Event Registration</h2>
 
             <form onSubmit={handleRegSubmit} className="space-y-3">
               {["name", "college", "age", "email", "phone"].map((field) => (
@@ -426,7 +492,7 @@ export default function AllEvents() {
                   onChange={handleRegChange}
                   placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                  className="w-full border border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none bg-gray-900 text-gray-100"
                 />
               ))}
 
@@ -435,7 +501,7 @@ export default function AllEvents() {
                 value={regForm.gender}
                 onChange={handleRegChange}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                className="w-full border border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none bg-gray-900 text-gray-100"
               >
                 <option value="">Select Gender</option>
                 <option>Male</option>
@@ -443,7 +509,7 @@ export default function AllEvents() {
                 <option>Other</option>
               </select>
 
-              <button type="submit" className="w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition">
+              <button type="submit" className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition">
                 Submit Registration
               </button>
             </form>
@@ -453,17 +519,17 @@ export default function AllEvents() {
 
       {/* ===== Feedback Modal ===== */}
       {showFeedback && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md md:max-w-lg p-6 animate-fadeIn relative">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
+          <div className="bg-gray-800 rounded-2xl shadow-xl w-full max-w-md md:max-w-lg p-6 animate-fadeIn relative border border-gray-700">
             {/* Close Button */}
-            <button onClick={() => setShowFeedback(false)} className="absolute top-3 right-3 text-gray-500 hover:text-gray-800">
+            <button onClick={() => setShowFeedback(false)} className="absolute top-3 right-3 text-gray-300 hover:text-white">
               <X size={20} />
             </button>
 
             {/* Modal Title */}
-            <h2 className="text-xl font-bold text-purple-700 mb-4 text-center">Give Feedback</h2>
+            <h2 className="text-xl font-bold text-purple-300 mb-4 text-center">Give Feedback</h2>
 
-            {selectedEventForReg && <p className="text-sm text-gray-700 mb-2 text-center">Event: {selectedEventForReg.title}</p>}
+            {selectedEventForReg && <p className="text-sm text-gray-300 mb-2 text-center">Event: {selectedEventForReg.title}</p>}
 
             {/* Rating Selection */}
             <div className="flex justify-center mb-4">
@@ -471,7 +537,7 @@ export default function AllEvents() {
                 <span
                   key={star}
                   onClick={() => setRating(star)}
-                  className={`cursor-pointer text-2xl ${star <= rating ? "text-yellow-400" : "text-gray-300"}`}
+                  className={`cursor-pointer text-2xl ${star <= rating ? "text-yellow-400" : "text-gray-500"}`}
                 >
                   ★
                 </span>
@@ -483,11 +549,11 @@ export default function AllEvents() {
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
               placeholder="Write your feedback..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 h-24 focus:ring-2 focus:ring-purple-500 outline-none"
+              className="w-full border border-gray-700 rounded-lg px-3 py-2 h-24 focus:ring-2 focus:ring-purple-500 outline-none bg-gray-900 text-gray-100"
             />
 
             {/* Submit Button */}
-            <button onClick={handleFeedbackSubmit} className="mt-4 w-full bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition">
+            <button onClick={handleFeedbackSubmit} className="mt-4 w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition">
               Submit Feedback
             </button>
           </div>
@@ -500,7 +566,7 @@ export default function AllEvents() {
 // Helper Component
 const Info = ({ label, value }) => (
   <div>
-    <p className="text-sm text-gray-500">{label}</p>
-    <p className="font-semibold text-gray-700">{value}</p>
+    <p className="text-sm text-gray-400">{label}</p>
+    <p className="font-semibold text-gray-100">{value}</p>
   </div>
 );

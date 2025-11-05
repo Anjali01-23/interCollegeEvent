@@ -51,8 +51,8 @@ export default function Signup() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-slate-50 to-slate-100">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
+    <div className="flex justify-center items-center min-h-screen bg-gray-900 text-gray-100">
+      <div className="bg-gray-800 shadow-lg rounded-xl p-8 w-full max-w-md border border-gray-700">
         <div className="flex justify-center mb-4">
           <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl">
             👤
@@ -60,14 +60,14 @@ export default function Signup() {
         </div>
 
         <h2 className="text-2xl font-semibold text-center mb-2">Create Account</h2>
-        <p className="text-gray-500 text-center mb-4">Join CampusEventHub today</p>
+        <p className="text-gray-300 text-center mb-4">Join CampusEventHub today</p>
 
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        {error && <p className="text-red-400 text-center mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Full Name */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">Full Name</label>
+            <label className="block text-gray-300 text-sm font-medium mb-1">Full Name</label>
             <div className="relative">
               <MdPerson className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -76,7 +76,8 @@ export default function Signup() {
                 placeholder="Enter your full name"
                 value={formData.fullName}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                           bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600"
                 required
               />
             </div>
@@ -84,7 +85,7 @@ export default function Signup() {
 
           {/* Email */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">Email Address</label>
+            <label className="block text-gray-300 text-sm font-medium mb-1">Email Address</label>
             <div className="relative">
               <MdEmail className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -93,7 +94,8 @@ export default function Signup() {
                 placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                           bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600"
                 required
               />
             </div>
@@ -101,7 +103,7 @@ export default function Signup() {
 
           {/* College */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">College/University</label>
+            <label className="block text-gray-300 text-sm font-medium mb-1">College/University</label>
             <div className="relative">
               <MdSchool className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -110,7 +112,8 @@ export default function Signup() {
                 placeholder="Enter your college name"
                 value={formData.college}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                           bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600"
                 required
               />
             </div>
@@ -118,12 +121,13 @@ export default function Signup() {
 
           {/* Role */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">Role</label>
+            <label className="block text-gray-300 text-sm font-medium mb-1">Role</label>
             <select
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                         bg-gray-700 text-gray-100 border-gray-600"
             >
               <option value="Student">Student</option>
               <option value="College Admin">College Admin</option>
@@ -133,7 +137,7 @@ export default function Signup() {
 
           {/* Password */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">Password</label>
+            <label className="block text-gray-300 text-sm font-medium mb-1">Password</label>
             <div className="relative">
               <MdLock className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -142,7 +146,8 @@ export default function Signup() {
                 placeholder="Create a password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                           bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600"
                 required
               />
             </div>
@@ -150,7 +155,7 @@ export default function Signup() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-gray-700 text-sm font-medium mb-1">Confirm Password</label>
+            <label className="block text-gray-300 text-sm font-medium mb-1">Confirm Password</label>
             <div className="relative">
               <MdLock className="absolute left-3 top-3 text-gray-400 text-xl" />
               <input
@@ -159,7 +164,8 @@ export default function Signup() {
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500
+                           bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600"
                 required
               />
             </div>
@@ -167,15 +173,15 @@ export default function Signup() {
 
           <button
             type="submit"
-            className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-md hover:opacity-90 transition"
+            className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-md hover:opacity-90 transition"
           >
             Create Account
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-gray-400">
           Already have an account?{" "}
-          <Link to="/login" className="text-purple-600 font-medium hover:underline">
+          <Link to="/login" className="text-indigo-300 font-medium hover:underline">
             Sign in
           </Link>
         </p>

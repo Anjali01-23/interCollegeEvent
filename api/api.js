@@ -50,8 +50,13 @@ export const getStudentRegistrations = (studentId) => {
 };
 
 //To delete Registration
-export const cancelRegistration = (id) =>
-  axios.delete(`${BASE_REG_URL}/${id}`);
+export const cancelRegistration = (id) => {
+  if (!id && id !== 0) {
+    // throw a clearer client-side error instead of sending "undefined"
+    return Promise.reject(new Error("cancelRegistration: id is required"));
+  }
+  return axios.delete(`${BASE_REG_URL}/${id}`);
+};
 
 
 // ===== Feedback APIs =====
@@ -70,3 +75,6 @@ export const getFeedbackStats = () => axios.get(`${BASE_FEEDBACK_URL}/stats`);
 // Delete feedback (admin)
 export const deleteFeedback = (id) =>
   axios.delete(`${BASE_FEEDBACK_URL}/${id}`);
+
+//Per student feedback.
+export const getStudentFeedbacks = (studentId) => axios.get(`${BASE_FEEDBACK_URL}/student/${studentId}`);

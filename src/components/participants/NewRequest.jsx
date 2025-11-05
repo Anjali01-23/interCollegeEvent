@@ -51,32 +51,32 @@ const NewRequest = () => {
     }
   };
 
-  if (loading) return <p className="text-gray-500">Loading requests…</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  if (loading) return <p className="text-gray-400">Loading requests…</p>;
+  if (error) return <p className="text-red-400">{error}</p>;
 
   if (requests.length === 0) {
-    return <p className="text-gray-600">No new requests</p>;
+    return <p className="text-gray-400">No new requests</p>;
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-gray-100">
       {/* Desktop table */}
       <div className="hidden md:block">
-        <table className="min-w-full bg-white border rounded-lg overflow-hidden">
-          <thead className="bg-gray-100">
+        <table className="min-w-full bg-gray-800 border rounded-lg overflow-hidden border-gray-700">
+          <thead className="bg-gray-900">
             <tr>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Name</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Email</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Event ID</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Actions</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-200">Name</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-200">Email</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-200">Event ID</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-200">Actions</th>
             </tr>
           </thead>
           <tbody>
             {requests.map((req) => (
-              <tr key={req.id} className="border-t last:border-b">
-                <td className="p-3 text-sm text-gray-800">{req.name}</td>
-                <td className="p-3 text-sm text-gray-600">{req.email}</td>
-                <td className="p-3 text-sm text-gray-600">{req.event_id}</td>
+              <tr key={req.id} className="border-t last:border-b border-gray-700">
+                <td className="p-3 text-sm text-gray-100">{req.name}</td>
+                <td className="p-3 text-sm text-gray-300">{req.email}</td>
+                <td className="p-3 text-sm text-gray-300">{req.event_id}</td>
                 <td className="p-3">
                   <div className="flex gap-2">
                     <button
@@ -104,12 +104,12 @@ const NewRequest = () => {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {requests.map((req) => (
-          <div key={req.id} className="bg-white p-4 rounded-lg shadow-sm border">
+          <div key={req.id} className="bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-700">
             <div className="flex justify-between items-start">
               <div>
-                <p className="font-semibold text-gray-800">{req.name}</p>
-                <p className="text-sm text-gray-500">{req.email}</p>
-                <p className="text-sm text-gray-500 mt-1">Event: <span className="font-medium text-gray-700">{req.event_id}</span></p>
+                <p className="font-semibold text-gray-100">{req.name}</p>
+                <p className="text-sm text-gray-300">{req.email}</p>
+                <p className="text-sm text-gray-300 mt-1">Event: <span className="font-medium text-gray-200">{req.event_id}</span></p>
               </div>
 
               <div className="ml-2 flex-shrink-0 flex flex-col gap-2">
