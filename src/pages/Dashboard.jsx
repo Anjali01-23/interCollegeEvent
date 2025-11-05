@@ -499,6 +499,9 @@ const computeTimelineFromList = (list = []) => {
                         {new Date(e.startDate).toLocaleDateString()}
                       </span>
                     )}
+                    <span className="ml-2 text-gray-400">
+                        {e.status.charAt(0).toUpperCase()+e.status.slice(1).toLowerCase()}
+                      </span>
                   </div>
                 </div>
 
