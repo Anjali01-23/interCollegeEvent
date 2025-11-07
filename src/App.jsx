@@ -9,6 +9,10 @@ import Unauthorized from './pages/Unauthorized'
 import ProtectedRoute from './components/ProtectedRoute'
 import ParticipantDashboard from './pages/ParticipantDashboard'
 import MyRegistrations from './pages/MyRegistrations'
+import Superadmin from './pages/Superadmin'
+import EventApproval from './pages/EventApproval'
+import AdminParticipantDashboard from './pages/AdminParticipantDashboard'
+
 const App = () => {
   return (
     <>
@@ -33,6 +37,18 @@ const App = () => {
       <Route/>
       <Route path='/myregistrations' element={ <ProtectedRoute allowedRoles={["Student"]}>
         <MyRegistrations/>
+       </ProtectedRoute>}/>
+      <Route/>
+      <Route path='/superadmindashboard' element={ <ProtectedRoute allowedRoles={["Super Admin"]}>
+        <Superadmin/>
+       </ProtectedRoute>}/>
+      <Route/>
+      <Route path='/adminparticipantdashboard' element={ <ProtectedRoute allowedRoles={["Super Admin"]}>
+        <AdminParticipantDashboard/>
+       </ProtectedRoute>}/>
+      <Route/>
+      <Route path='/eventapprovaldashboard' element={ <ProtectedRoute allowedRoles={["Super Admin"]}>
+        <EventApproval/>
        </ProtectedRoute>}/>
       <Route/>
     </Routes>

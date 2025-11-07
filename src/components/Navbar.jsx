@@ -97,10 +97,17 @@ const Navbar = () => {
       );
     }
     if ((role || "").toLowerCase() === "superadmin" || (role || "").toLowerCase() === "super admin") {
-      return (
+      return ( <>
         <Link to="/superadmindashboard" className="block md:inline-block px-2 py-1 rounded hover:bg-gray-800/60">
           Super Admin Panel
         </Link>
+        <Link to="/adminparticipantdashboard" className="block md:inline-block px-2 py-1 rounded hover:bg-gray-800/60">
+          Admin Requests
+        </Link>
+        {/* <Link to="/eventapprovaldashboard" className="block md:inline-block px-2 py-1 rounded hover:bg-gray-800/60">
+          Event Approval Requests 
+        </Link> */}
+        </>
       );
     }
     return null;

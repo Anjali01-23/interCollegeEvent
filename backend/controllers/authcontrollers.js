@@ -12,11 +12,32 @@ export function signup(req, res) {
     if (result.length) return res.status(400).json({ message: "Email already exists" });
 
     const hashedPassword = bcrypt.hashSync(password, 10);
+    const role = "student";
 
-    create({ fullName, email, password: hashedPassword, role, college }, (err) => {
-      if (err) return res.status(500).json({ message: "DB error" });
-      res.json({ message: "User created successfully" });
+    create(
+  { fullName, email, password: hashedPassword, role, college },
+  (err, dbResult) => {
+    if (err) {
+      console.error("DB error creating user:", err);
+      return res.status(500).json({ message: "DB error creating user", error: err.message });
+    }
+
+    const newUserId = dbResult?.insertId ?? null;
+
+    return res.status(201).json({
+      message: "User created successfully",
+      id: newUserId,
+      user: {
+        id: newUserId,
+        fullname: fullName,
+        email,
+        college,
+        role
+      }
     });
+  }
+);
+
   });
 }
 

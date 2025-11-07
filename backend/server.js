@@ -7,7 +7,7 @@ import registrationRoutes from "./routes/registrations.js";
 import authRoutes from "./routes/auth.js";
 import eventRoutes from "./routes/events.js"; // New events routes
 import feedbackRouter from "./routes/feedback.js";
-
+import adminRequestRouter from "./routes/adminRequests.js";
 
 dotenv.config();
 const app = express();
@@ -24,4 +24,5 @@ app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes); // Event routes
 app.use("/api/registrations", registrationRoutes);
 app.use("/api/feedback", feedbackRouter);
+app.use("/api/admin-requests",adminRequestRouter);
 app.listen(port, () => console.log(`Server running on port ${port}`));
