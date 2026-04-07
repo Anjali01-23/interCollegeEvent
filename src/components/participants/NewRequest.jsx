@@ -1,3 +1,4 @@
+// src/components/participants/NewRequest.jsx
 import React, { useEffect, useState } from "react";
 import { getRegistrations, handleRegistration } from "../../../api/api";
 
@@ -51,65 +52,86 @@ const NewRequest = () => {
     }
   };
 
-  if (loading) return <p className="text-gray-400">Loading requests…</p>;
-  if (error) return <p className="text-red-400">{error}</p>;
+  if (loading)
+    return (
+      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm text-gray-700 dark:text-gray-200">
+        Loading requests…
+      </div>
+    );
+  if (error)
+    return (
+      <div className="p-4 bg-red-50 dark:bg-red-900 rounded-lg border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200">
+        {error}
+      </div>
+    );
 
   if (requests.length === 0) {
-    return <p className="text-gray-400">No new requests</p>;
+    return (
+      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm text-gray-600 dark:text-gray-300">
+        No new requests
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4 text-gray-100">
+    <div className="space-y-4">
       {/* Desktop table */}
       <div className="hidden md:block">
-        <table className="min-w-full bg-gray-800 border rounded-lg overflow-hidden border-gray-700">
-          <thead className="bg-gray-900">
-            <tr>
-              <th className="p-3 text-left text-sm font-medium text-gray-200">Name</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-200">Email</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-200">Event ID</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-200">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {requests.map((req) => (
-              <tr key={req.id} className="border-t last:border-b border-gray-700">
-                <td className="p-3 text-sm text-gray-100">{req.name}</td>
-                <td className="p-3 text-sm text-gray-300">{req.email}</td>
-                <td className="p-3 text-sm text-gray-300">{req.event_id}</td>
-                <td className="p-3">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => updateStatus(req.id, "accepted")}
-                      disabled={processingId === req.id}
-                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 disabled:opacity-60"
-                    >
-                      Accept
-                    </button>
-                    <button
-                      onClick={() => updateStatus(req.id, "rejected")}
-                      disabled={processingId === req.id}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 disabled:opacity-60"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </td>
+        <div className="overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <table className="min-w-full table-auto">
+            <thead className="bg-gray-50 dark:bg-gray-900">
+              <tr>
+                <th className="p-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Name</th>
+                <th className="p-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Email</th>
+                <th className="p-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Event ID</th>
+                <th className="p-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {requests.map((req) => (
+                <tr key={req.id} className="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900">
+                  <td className="p-3 text-sm text-gray-900 dark:text-gray-100">{req.name}</td>
+                  <td className="p-3 text-sm text-gray-600 dark:text-gray-300">{req.email}</td>
+                  <td className="p-3 text-sm text-gray-600 dark:text-gray-300">{req.event_id ?? "N/A"}</td>
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateStatus(req.id, "accepted")}
+                        disabled={processingId === req.id}
+                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 disabled:opacity-60"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => updateStatus(req.id, "rejected")}
+                        disabled={processingId === req.id}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 disabled:opacity-60"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {requests.map((req) => (
-          <div key={req.id} className="bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-700">
+          <div
+            key={req.id}
+            className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+          >
             <div className="flex justify-between items-start">
               <div>
-                <p className="font-semibold text-gray-100">{req.name}</p>
-                <p className="text-sm text-gray-300">{req.email}</p>
-                <p className="text-sm text-gray-300 mt-1">Event: <span className="font-medium text-gray-200">{req.event_id}</span></p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{req.name}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{req.email}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                  Event: <span className="font-medium text-gray-800 dark:text-gray-200">{req.event_id ?? "N/A"}</span>
+                </p>
               </div>
 
               <div className="ml-2 flex-shrink-0 flex flex-col gap-2">

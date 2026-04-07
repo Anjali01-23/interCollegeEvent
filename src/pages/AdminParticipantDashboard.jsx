@@ -1,3 +1,4 @@
+// src/pages/AdminParticipantDashboard.jsx
 import React from "react";
 import Navbar from "../components/Navbar";
 import { useState } from "react";
@@ -15,13 +16,14 @@ const AdminParticipantDashboard = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-[#0b1020] text-gray-100">
+      <div className="min-h-screen bg-white dark:bg-[#0b1020] text-gray-900 dark:text-gray-100">
         <Navbar />
+
         {/* Header */}
         <header className="px-4 sm:px-6 lg:px-8 pt-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h1 className="text-2xl sm:text-2.5xl font-bold text-gray-100">
+              <h1 className="text-2xl sm:text-2.5xl font-bold text-gray-900 dark:text-gray-100">
                 Admin Requests
               </h1>
             </div>
@@ -29,18 +31,19 @@ const AdminParticipantDashboard = () => {
             {/* Tabs */}
             <div className="mt-5">
               <div className="overflow-x-auto">
-                <div className="inline-flex gap-6 text-gray-300 font-medium pb-2">
+                <div className="inline-flex gap-6 font-medium pb-2">
                   {tabs.map((tab) => {
                     const active = activeTab === tab;
                     return (
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`whitespace-nowrap pb-3 px-1 sm:px-2 text-sm sm:text-base rounded-t-md focus:outline-none ${
-                          active
-                            ? "text-purple-400 border-b-2 border-purple-400"
-                            : "text-gray-300 hover:text-purple-300"
-                        }`}
+                        className={`whitespace-nowrap pb-3 px-1 sm:px-2 text-sm sm:text-base rounded-t-md focus:outline-none transition-colors
+                          ${
+                            active
+                              ? "text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400"
+                              : "text-gray-600 dark:text-gray-300 hover:text-purple-500 dark:hover:text-purple-300"
+                          }`}
                         aria-current={active ? "page" : undefined}
                       >
                         {tab}
@@ -56,9 +59,9 @@ const AdminParticipantDashboard = () => {
         {/* Content */}
         <main className="px-4 sm:px-6 lg:px-8 py-6">
           <div className="max-w-7xl mx-auto">
-            <div className="bg-gray-800 rounded-xl shadow p-4 sm:p-6 border border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
               {activeTab === "New Requests" && <NewReq />}
-              {activeTab === "All Requests" && <AdminData/>}
+              {activeTab === "All Requests" && <AdminData />}
             </div>
           </div>
         </main>

@@ -25,8 +25,6 @@ export default function AllEvents() {
 
   // Store registered event ids as string keys
   const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
-
-  // stores event ids for which the current student already gave feedback
   const [feedbackGiven, setFeedbackGiven] = useState(new Set());
 
   const [regForm, setRegForm] = useState({
@@ -38,7 +36,6 @@ export default function AllEvents() {
     phone: "",
   });
 
-  // ===== Registration Form Handlers =====
   const handleRegChange = (e) => {
     const { name, value } = e.target;
     setRegForm({ ...regForm, [name]: value });
@@ -56,7 +53,6 @@ export default function AllEvents() {
     });
   };
 
-  // ===== Fetch Events =====
   const fetchEvents = async () => {
     try {
       const res = await getEvents();
@@ -69,37 +65,32 @@ export default function AllEvents() {
   };
 
   useEffect(() => {
-    // load events on mount
     fetchEvents();
   }, []);
 
-  // ===== Load student feedbacks (so we know which events user already rated) =====
+  // load student feedbacks
   useEffect(() => {
     const loadFeedbacks = async () => {
       try {
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user?.id) return;
-
         const res = await getStudentFeedbacks(user.id);
-        // create a set of event ids (string)
         const ids = new Set((res.data || []).map((fb) => String(fb.event_id)));
         setFeedbackGiven(ids);
       } catch (err) {
-        // If 404 or other error, log but don't crash the page
         console.error("Failed to load feedbacks", err);
       }
     };
     loadFeedbacks();
   }, []);
 
-  // fetch student registrations (for disabling register button)
+  // load registrations
   useEffect(() => {
     const loadStudentRegs = async () => {
       try {
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user?.id) return;
 
-        // Ensure events are loaded so we can try matching by name if event_id missing
         let currentEvents = events;
         if (!currentEvents || currentEvents.length === 0) {
           currentEvents = await fetchEvents();
@@ -109,11 +100,9 @@ export default function AllEvents() {
         const ids = new Set(
           (res.data || [])
             .map((r) => {
-              // Try common event id keys first
               const idFromRow = r.event_id ?? r.eventId ?? r.event;
               if (idFromRow !== undefined && idFromRow !== null) return String(idFromRow);
 
-              // fallback: try to match by event_name against loaded events
               if (r.event_name && currentEvents && currentEvents.length > 0) {
                 const match = currentEvents.find(
                   (ev) =>
@@ -122,8 +111,6 @@ export default function AllEvents() {
                 );
                 if (match) return String(match.id ?? match._id);
               }
-
-              // If nothing found, return undefined (will be filtered out)
               return undefined;
             })
             .filter((v) => v !== undefined && v !== null)
@@ -135,8 +122,7 @@ export default function AllEvents() {
       }
     };
     loadStudentRegs();
-    // We intentionally do not include `events` as dependency to avoid re-running too often.
-  }, []); // run once on mount
+  }, []); // run once
 
   const handleRegSubmit = async (e) => {
     e.preventDefault();
@@ -159,7 +145,6 @@ export default function AllEvents() {
 
       await createRegistration(payload);
 
-      // refresh student registrations from server (recommended)
       const res = await getStudentRegistrations(user.id);
       const ids = new Set(
         (res.data || [])
@@ -190,7 +175,6 @@ export default function AllEvents() {
     }
   };
 
-  // ===== Filter Logic =====
   const filtered = events.filter((ev) => {
     const matchSearch = ev.title?.toLowerCase().includes(search.toLowerCase());
     const matchType =
@@ -203,7 +187,6 @@ export default function AllEvents() {
     return matchSearch && matchType && matchStatus;
   });
 
-  // Helper: format date to dd-mm-yyyy
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const d = String(date.getDate()).padStart(2, "0");
@@ -232,7 +215,6 @@ export default function AllEvents() {
 
       await createFeedback(payload);
 
-      // success: add this event id to feedbackGiven so UI updates immediately
       setFeedbackGiven((prev) => new Set(prev).add(String(eventId)));
 
       alert("Feedback submitted successfully!");
@@ -241,14 +223,11 @@ export default function AllEvents() {
       setFeedbackText("");
     } catch (err) {
       console.error("Failed to submit feedback", err);
-
-      // if backend returns 409 for duplicate, show friendly message
       const status = err.response?.status;
       const serverMsg = err.response?.data?.message || err.message;
 
       if (status === 409) {
         alert(serverMsg || "You have already submitted feedback for this event.");
-        // ensure local state is consistent (in case server already had it)
         const eventId = selectedEventForReg ? (selectedEventForReg.id || selectedEventForReg._id) : null;
         if (eventId) setFeedbackGiven((prev) => new Set(prev).add(String(eventId)));
         setShowFeedback(false);
@@ -259,31 +238,28 @@ export default function AllEvents() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
       <Navbar />
 
-      {/* ===== Main ===== */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-100 mb-6">All Events</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6">All Events</h1>
 
-        {/* Search */}
         <div className="relative mb-6">
           <input
             type="text"
             placeholder="Search events..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-800 text-gray-100 placeholder-gray-400"
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 placeholder-gray-400"
           />
           <Search size={18} className="absolute top-2.5 left-3 text-gray-400" />
         </div>
 
-        {/* Filters */}
-        <div className="bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-700 mb-8">
-          <p className="font-semibold text-gray-200 mb-4">Filters</p>
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-8">
+          <p className="font-semibold text-gray-700 dark:text-gray-200 mb-4">Filters</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <select
-              className="border border-gray-700 rounded-lg p-2 bg-gray-800 text-gray-100"
+              className="border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             >
@@ -294,7 +270,7 @@ export default function AllEvents() {
             </select>
 
             <select
-              className="border border-gray-700 rounded-lg p-2 bg-gray-800 text-gray-100"
+              className="border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -316,10 +292,8 @@ export default function AllEvents() {
           </div>
         </div>
 
-        {/* ===== Events Grid ===== */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((event) => {
-            // normalize event key to string
             const eventKey = String(event.id ?? event._id ?? "");
             const isRegistered = registeredEventIds.has(eventKey);
             const hasGivenFeedback = feedbackGiven.has(String(event.id ?? event._id));
@@ -328,7 +302,7 @@ export default function AllEvents() {
               <article
                 key={event.id ?? event._id}
                 onClick={() => setSelectedEvent(event)}
-                className="bg-gray-800 rounded-xl shadow hover:shadow-md transition border border-gray-700 overflow-hidden transform hover:scale-[1.02] cursor-pointer"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-none border border-gray-200 dark:border-gray-700 overflow-hidden transform hover:scale-[1.02] cursor-pointer"
               >
                 <div className="relative">
                   <img
@@ -345,18 +319,17 @@ export default function AllEvents() {
                 </div>
 
                 <div className="p-4">
-                  <h2 className="font-bold text-lg text-gray-100 mb-1 truncate">{event.title}</h2>
-                  <p className="text-gray-300 text-sm truncate">{event.college}</p>
-                  <div className="flex items-center text-sm text-gray-400 mt-2">
-                    <Calendar size={16} className="mr-1 text-gray-300" />
+                  <h2 className="font-bold text-lg mb-1 truncate text-gray-900 dark:text-gray-100">{event.title}</h2>
+                  <p className="text-sm truncate text-gray-600 dark:text-gray-300">{event.college}</p>
+                  <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    <Calendar size={16} className="mr-1" />
                     {formatDate(event.startDate)} - {formatDate(event.endDate)}
                   </div>
 
-                  {/* Register + Feedback Buttons */}
                   <div className="mt-3 flex flex-col sm:flex-row gap-3">
                     {isRegistered ? (
                       <button
-                        className="w-full sm:w-1/2 bg-gray-600 text-gray-300 py-2 rounded-lg cursor-not-allowed"
+                        className="w-full sm:w-1/2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-2 rounded-lg cursor-not-allowed"
                         onClick={(e) => {
                           e.stopPropagation();
                           alert("You have already registered for this event.");
@@ -380,19 +353,17 @@ export default function AllEvents() {
                         className="w-full sm:w-1/2 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
                         onClick={(e) => {
                           e.stopPropagation();
-                         alert("Event is already completed so you can't register");
+                          alert("Event is already completed so you can't register");
                         }}
                       >
                         Register
                       </button>
-                    )
-                    )}
+                    ))}
 
-                    {/* Feedback button: prevents opening modal if already given */}
                     {event.status && event.status.toLowerCase() === "completed" ? (
                       hasGivenFeedback ? (
                         <button
-                          className="w-full sm:w-1/2 bg-gray-600 text-gray-300 py-2 rounded-lg cursor-not-allowed"
+                          className="w-full sm:w-1/2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-2 rounded-lg cursor-not-allowed"
                           onClick={(e) => {
                             e.stopPropagation();
                             alert("You have already given feedback for this event.");
@@ -414,7 +385,7 @@ export default function AllEvents() {
                       )
                     ) : (
                       <button
-                        className="w-full sm:w-1/2 bg-gray-600 text-gray-300 py-2 rounded-lg cursor-not-allowed"
+                        className="w-full sm:w-1/2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-2 rounded-lg cursor-not-allowed"
                         onClick={(e) => {
                           e.stopPropagation();
                           alert("Event is still upcoming. Feedback allowed only after event is completed.");
@@ -431,14 +402,14 @@ export default function AllEvents() {
         </div>
 
         {filtered.length === 0 && (
-          <p className="text-center text-gray-400 mt-8">No events match your filters.</p>
+          <p className="text-center text-gray-500 dark:text-gray-400 mt-8">No events match your filters.</p>
         )}
       </main>
 
-      {/* ===== Event Detail Modal ===== */}
+      {/* Modals (use white bg in light, dark:bg in dark) */}
       {selectedEvent && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 w-full max-w-3xl md:max-w-4xl rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto animate-fadeIn border border-gray-700">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-3xl md:max-w-4xl rounded-2xl shadow-lg max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700">
             <div className="relative">
               <img
                 src={`http://localhost:5000/uploads/${selectedEvent.image}`}
@@ -447,15 +418,15 @@ export default function AllEvents() {
               />
               <button
                 onClick={() => setSelectedEvent(null)}
-                className="absolute top-4 right-4 bg-gray-700 rounded-full p-2 shadow hover:bg-purple-700 transition"
+                className="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 rounded-full p-2 shadow hover:bg-purple-700 transition"
               >
-                <X size={22} className="text-white" />
+                <X size={22} className="text-gray-900 dark:text-white" />
               </button>
             </div>
 
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-purple-300 mb-2">{selectedEvent.title}</h2>
-              <p className="text-gray-300 mb-4">College: {selectedEvent.college}</p>
+              <h2 className="text-2xl font-bold text-purple-600 dark:text-purple-300 mb-2">{selectedEvent.title}</h2>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">College: {selectedEvent.college}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <Info label="Start Date" value={formatDate(selectedEvent.startDate)} />
@@ -465,22 +436,21 @@ export default function AllEvents() {
               </div>
 
               <div className="mb-4">
-                <p className="font-semibold text-gray-100">Description</p>
-                <p className="text-gray-300 text-sm">{selectedEvent.description}</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">Description</p>
+                <p className="text-gray-700 dark:text-gray-300 text-sm">{selectedEvent.description}</p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ===== Registration Modal ===== */}
       {showRegModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
-          <div className="bg-gray-800 rounded-2xl shadow-xl w-full max-w-md md:max-w-lg p-6 animate-fadeIn relative border border-gray-700">
-            <button onClick={handlecross} className="absolute top-3 right-3 text-gray-300 hover:text-white">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-full max-w-md md:max-w-lg p-6 border border-gray-200 dark:border-gray-700">
+            <button onClick={handlecross} className="absolute top-3 right-3 text-gray-600 dark:text-gray-200 hover:text-gray-800">
               <X size={20} />
             </button>
-            <h2 className="text-xl font-bold text-purple-300 mb-4 text-center">Event Registration</h2>
+            <h2 className="text-xl font-bold text-purple-600 dark:text-purple-300 mb-4 text-center">Event Registration</h2>
 
             <form onSubmit={handleRegSubmit} className="space-y-3">
               {["name", "college", "age", "email", "phone"].map((field) => (
@@ -492,7 +462,7 @@ export default function AllEvents() {
                   onChange={handleRegChange}
                   placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
                   required
-                  className="w-full border border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none bg-gray-900 text-gray-100"
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
                 />
               ))}
 
@@ -501,7 +471,7 @@ export default function AllEvents() {
                 value={regForm.gender}
                 onChange={handleRegChange}
                 required
-                className="w-full border border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none bg-gray-900 text-gray-100"
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
               >
                 <option value="">Select Gender</option>
                 <option>Male</option>
@@ -517,42 +487,36 @@ export default function AllEvents() {
         </div>
       )}
 
-      {/* ===== Feedback Modal ===== */}
       {showFeedback && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
-          <div className="bg-gray-800 rounded-2xl shadow-xl w-full max-w-md md:max-w-lg p-6 animate-fadeIn relative border border-gray-700">
-            {/* Close Button */}
-            <button onClick={() => setShowFeedback(false)} className="absolute top-3 right-3 text-gray-300 hover:text-white">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-full max-w-md md:max-w-lg p-6 border border-gray-200 dark:border-gray-700">
+            <button onClick={() => setShowFeedback(false)} className="absolute top-3 right-3 text-gray-600 dark:text-gray-200 hover:text-gray-800">
               <X size={20} />
             </button>
 
-            {/* Modal Title */}
-            <h2 className="text-xl font-bold text-purple-300 mb-4 text-center">Give Feedback</h2>
+            <h2 className="text-xl font-bold text-purple-600 dark:text-purple-300 mb-4 text-center">Give Feedback</h2>
 
-            {selectedEventForReg && <p className="text-sm text-gray-300 mb-2 text-center">Event: {selectedEventForReg.title}</p>}
+            {selectedEventForReg && <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 text-center">Event: {selectedEventForReg.title}</p>}
 
-            {/* Rating Selection */}
             <div className="flex justify-center mb-4">
               {[1, 2, 3, 4, 5].map((star) => (
                 <span
                   key={star}
                   onClick={() => setRating(star)}
-                  className={`cursor-pointer text-2xl ${star <= rating ? "text-yellow-400" : "text-gray-500"}`}
+                  className={`cursor-pointer text-2xl ${star <= rating ? "text-yellow-400" : "text-gray-300 dark:text-gray-500"}`}
                 >
                   ★
                 </span>
               ))}
             </div>
 
-            {/* Feedback Textarea */}
             <textarea
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
               placeholder="Write your feedback..."
-              className="w-full border border-gray-700 rounded-lg px-3 py-2 h-24 focus:ring-2 focus:ring-purple-500 outline-none bg-gray-900 text-gray-100"
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 h-24 focus:ring-2 focus:ring-purple-500 outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
             />
 
-            {/* Submit Button */}
             <button onClick={handleFeedbackSubmit} className="mt-4 w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition">
               Submit Feedback
             </button>
@@ -563,10 +527,9 @@ export default function AllEvents() {
   );
 }
 
-// Helper Component
 const Info = ({ label, value }) => (
   <div>
-    <p className="text-sm text-gray-400">{label}</p>
-    <p className="font-semibold text-gray-100">{value}</p>
+    <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+    <p className="font-semibold text-gray-900 dark:text-gray-100">{value}</p>
   </div>
 );
