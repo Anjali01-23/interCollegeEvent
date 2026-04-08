@@ -12,7 +12,7 @@ export function signup(req, res) {
     if (result.length) return res.status(400).json({ message: "Email already exists" });
 
     const hashedPassword = bcrypt.hashSync(password, 10);
-    const role = "student";
+    const role = "Student";
 
     create(
   { fullName, email, password: hashedPassword, role, college },
